@@ -188,3 +188,34 @@ def test_vn_only_is_keyed_to_the_vietnam_cron_exactly(poll_job):
     step = next(s for s in job["steps"] if s.get("name", "").startswith("Poll once"))
     vn_cron = doc["on"]["schedule"][1]["cron"]
     assert vn_cron in step["env"]["ACAPHE_VN_ONLY"]
+
+
+def test_the_poller_fails_rather_than_skips_on_missing_config(poll_job):
+    """620 is the production poller. A missing or rotated secret must turn the
+    run RED, not green-with-nothing-done.
+
+    619's copy warns and skips, which was right while polling there was
+    optional. Here that shape produced run 34235324292: green in 9 seconds,
+    every real step skipped, quote feed dead and nothing to show it. All four
+    secrets are checked, not just the Upstash pair — the first attempt with
+    credentials missing failed deep inside the poller instead, after a login
+    attempt.
+    """
+    doc, job = poll_job
+    gate = job["steps"][1]
+    assert "Verify" in gate["name"], "the config gate is no longer the first real step"
+
+    for name in ("UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN",
+                 "ACAPHE_USER", "ACAPHE_PASS"):
+        assert name in gate["env"], f"{name} is not checked by the gate"
+        assert name in gate["run"], f"{name} is not tested for emptiness"
+
+    assert "exit 1" in gate["run"], "the gate does not fail the job"
+    assert "::error::" in gate["run"], "a failure with no ::error:: is hard to read"
+
+    # And nothing may quietly opt out of it.
+    for step in job["steps"]:
+        assert "skip" not in str(step.get("if", "")), (
+            f"step {step.get('name')!r} still carries a skip condition — the "
+            f"job is meant to die at the gate, not step around it"
+        )

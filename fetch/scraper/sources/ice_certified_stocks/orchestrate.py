@@ -242,12 +242,17 @@ TIMEOUT = 30
 # 12 x 200, 0 x 403. Slower pacing cleared it — the run then progressed into the
 # expected 404-heavy timestamp search instead of being refused.
 #
+# 8.0 for /marketdata/ is the value that actually cleared the block in run
+# 34205612040. An earlier draft of this baseline kept it at 619's 5.0 — the
+# value present in BOTH refused runs — which would have left the one endpoint
+# family that was never observed succeeding at that interval untested.
+#
 # THE TWO FAMILIES ARE DELIBERATELY SEPARATE AND MUST NOT BE COLLAPSED INTO ONE
 # GLOBAL THROTTLE. That /marketdata/ (LIFFE) needs a slower interval than
 # /publicdocs/ (US reports) is observed production behaviour, not a guess.
 #
 # Do not revert or retune without telemetry giving a clear reason.
-_THROTTLE = {"public": 4.0, "marketdata": 5.0}
+_THROTTLE = {"public": 4.0, "marketdata": 8.0}
 _THROTTLE_CAP = 15.0           # ceiling when self-bumping on 429 retries
 TOO_MANY_429S = 4              # bail-out after this many consecutive 429s
 # Same idea for 403, which had no bail-out at all. A missing report answers 404,

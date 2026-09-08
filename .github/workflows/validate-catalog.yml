@@ -27,7 +27,7 @@ jobs:
         # The fetch dependencies are needed too: test_pacing_baseline.py imports
         # orchestrate to assert the real constants rather than grepping for them,
         # and orchestrate pulls in the parsers. Same pins as the fetch workflow.
-        run: pip install --quiet jsonschema pytest ruff==0.16.6 requests 'xlrd<2.0' openpyxl pdfplumber
+        run: pip install --quiet jsonschema pytest pyyaml ruff==0.16.6 requests 'xlrd<2.0' openpyxl pdfplumber
 
       - name: Lint
         run: ruff check .

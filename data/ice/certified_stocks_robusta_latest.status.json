@@ -1,9 +1,9 @@
 {
   "dataset": "ice.certified_stocks_robusta",
   "ok": true,
-  "fetched_at": "2026-09-08T11:22:26Z",
+  "fetched_at": "2026-09-08T11:36:03Z",
   "payload": "certified_stocks_robusta_latest.json",
-  "sha256": "89d32b6ecb050596b72f17616fb11e68e6112d3bc9f3f4dc82a9ba0022b8a0e3",
+  "sha256": "65ed31e7cbc9e5ced2217d4027b63af05a40e82cdcd2feebd5faa5714248136c",
   "bytes": 33754,
   "snapshots": 3,
   "window": {

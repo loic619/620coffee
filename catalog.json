@@ -1,6 +1,6 @@
 {
   "catalog_version": 1,
-  "generated_at": "2026-09-08T11:22:26Z",
+  "generated_at": "2026-09-08T11:36:03Z",
   "datasets": [
     {
       "id": "ice.certified_stocks_arabica_latest",
@@ -10,8 +10,8 @@
       "path": "data/ice/certified_stocks_arabica_latest.json",
       "format": "json",
       "bytes": 36274,
-      "sha256": "01958057f7c35f4e08c7d93112c8a9b453799f57cfbc3790d892f6feb9b4c19c",
-      "updated_at": "2026-09-08T11:22:26Z",
+      "sha256": "182f4b4c63b288e66833df1e80b452dfcc33ec491dca91947865fffda70e2915",
+      "updated_at": "2026-09-08T11:36:03Z",
       "cadence": "daily",
       "coverage": {
         "start": "2026-09-03",
@@ -27,8 +27,8 @@
       "path": "data/ice/certified_stocks_robusta_latest.json",
       "format": "json",
       "bytes": 33754,
-      "sha256": "89d32b6ecb050596b72f17616fb11e68e6112d3bc9f3f4dc82a9ba0022b8a0e3",
-      "updated_at": "2026-09-08T11:22:26Z",
+      "sha256": "65ed31e7cbc9e5ced2217d4027b63af05a40e82cdcd2feebd5faa5714248136c",
+      "updated_at": "2026-09-08T11:36:03Z",
       "cadence": "daily",
       "coverage": {
         "start": "2026-09-03",

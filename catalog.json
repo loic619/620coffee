@@ -1,5 +1,40 @@
 {
   "catalog_version": 1,
-  "generated_at": "2026-09-08T07:18:46Z",
-  "datasets": []
+  "generated_at": "2026-09-08T10:39:24Z",
+  "datasets": [
+    {
+      "id": "ice.certified_stocks_arabica_latest",
+      "title": "ICE certified arabica stocks — current window",
+      "description": "The days most recently fetched from ICE's published certified-stock reports. A window, not a history.",
+      "source": "ice",
+      "path": "data/ice/certified_stocks_arabica_latest.json",
+      "format": "json",
+      "bytes": 36274,
+      "sha256": "84f1c75e693dc78f5021d3f4f131abb75827f72846f2c8445049758b2d05f91d",
+      "updated_at": "2026-09-08T10:39:24Z",
+      "cadence": "daily",
+      "coverage": {
+        "start": "2026-09-03",
+        "end": "2026-09-04"
+      },
+      "upstream": "https://www.ice.com/"
+    },
+    {
+      "id": "ice.certified_stocks_robusta_latest",
+      "title": "ICE certified robusta stocks — current window",
+      "description": "The days most recently fetched from ICE's published certified-stock reports. A window, not a history.",
+      "source": "ice",
+      "path": "data/ice/certified_stocks_robusta_latest.json",
+      "format": "json",
+      "bytes": 32772,
+      "sha256": "7558eb6118892359c5208003c2e263e86d9ef6484197eb72758e5ee462bcb874",
+      "updated_at": "2026-09-08T10:39:24Z",
+      "cadence": "daily",
+      "coverage": {
+        "start": "2026-09-07",
+        "end": "2026-09-07"
+      },
+      "upstream": "https://www.ice.com/"
+    }
+  ]
 }

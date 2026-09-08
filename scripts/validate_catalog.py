@@ -30,6 +30,10 @@ ID_RE = re.compile(r"^[a-z0-9]+(\.[a-z0-9_-]+){1,3}$")
 REQUIRED = ("id", "title", "source", "path", "format", "bytes", "sha256", "updated_at")
 # Files allowed under data/ without a catalogue entry.
 NON_DATASET = {"README.md", ".gitkeep"}
+# Status sidecars describe a fetch run, not a dataset. They are published beside
+# the payload so a consumer can check `ok` and verify `sha256` before trusting
+# it, but they are not themselves catalogued.
+NON_DATASET_SUFFIX = (".status.json",)
 
 
 def sha256(path: Path) -> str:
@@ -135,6 +139,8 @@ def check(catalog: dict) -> list[str]:
     if DATA.is_dir():
         for path in sorted(DATA.rglob("*")):
             if not path.is_file() or path.name in NON_DATASET:
+                continue
+            if path.name.endswith(NON_DATASET_SUFFIX):
                 continue
             rel = path.relative_to(ROOT).as_posix()
             if rel not in seen_paths:

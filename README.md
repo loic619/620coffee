@@ -1,95 +1,75 @@
 # 620coffee
 
-**A public, redistributable catalogue of coffee market datasets.**
+**A public acquisition worker.** It fetches published market reports on a
+schedule, parses them, and publishes the observations it just collected.
 
-620coffee publishes tidied, versioned snapshots of publicly sourced coffee market
-and fundamentals data — exchange stock reports, regulatory positioning reports,
-price and options series, and physical market quotes. Each dataset is a plain
-JSON file with a stable path, described by a machine-readable catalogue.
+That is the whole job. 620coffee is not an archive and not a historical
+database: each dataset here holds **only the most recent window it fetched** —
+typically the last few business days. Older observations are not kept, and no
+history is reconstructed here.
 
-It is a *data* repository. It contains no analytics, no models, no signals and no
-application code — only the data and the small amount of tooling needed to
-validate and describe it.
+## Why it exists
 
-## Quick start
+GitHub Actions are free on public repositories. Some data collection is slow
+without being computationally expensive — the ICE certified-stock sweep is
+rate-limit paced at four seconds a request, so a run takes about forty minutes
+of almost pure waiting. Running that work here, in the open, costs nothing.
 
-Every dataset is reachable over plain HTTPS, no authentication and no API client:
+Publishing the result is a consequence of running in public, not the goal.
+
+## What is published
+
+| Dataset | Source | Contents |
+|---|---|---|
+| `data/ice/certified_stocks_arabica_latest.json` | ICE | The days most recently fetched from ICE's published certified-stock reports |
+| `data/ice/certified_stocks_robusta_latest.json` | ICE | As above, for robusta |
+
+Each payload has a `.status.json` sidecar carrying `ok`, `fetched_at`, `sha256`,
+the window covered, and any per-source fetch errors. **Read the status first**:
+check `ok`, then verify the payload's bytes against its `sha256`.
+
+`catalog.json` indexes what is currently published. See
+[`docs/DATA_CONTRACT.md`](docs/DATA_CONTRACT.md) before building on any of it.
 
 ```bash
-# 1. Read the catalogue (small, changes on every publish)
-curl -sL https://raw.githubusercontent.com/loic619/620coffee/main/catalog.json
-
-# 2. Fetch a dataset named in it
-curl -sL https://raw.githubusercontent.com/loic619/620coffee/main/data/ice/<file>.json
+curl -sL https://raw.githubusercontent.com/loic619/620coffee/main/data/ice/certified_stocks_arabica_latest.status.json
+curl -sL https://raw.githubusercontent.com/loic619/620coffee/main/data/ice/certified_stocks_arabica_latest.json
 ```
 
-`catalog.json` carries a `sha256` and `updated_at` for every dataset, so a
-consumer can fetch the catalogue alone and pull only the files that actually
-changed. See [`docs/DATA_CONTRACT.md`](docs/DATA_CONTRACT.md) before you build
-against it.
+Note that `raw.githubusercontent.com` caches for five minutes (measured: an
+updated file became visible 292 seconds after the push), and a query-string
+cache-buster does not bypass it.
 
-## What is in here
+## What is *not* here, and will not be
 
-| Directory | Source | Contents |
-|---|---|---|
-| `data/ice/` | ICE (Intercontinental Exchange) | Certified stocks reports, including deep history |
-| `data/cftc/` | CFTC | Commitments of Traders positioning reports |
-| `data/barchart/` | Barchart | Futures price series and options data |
-| `data/acaphe/` | Acaphe | Vietnamese physical coffee quotes |
+- **History.** No archives, no long series, no backfills. A payload is a window.
+  Anything that accumulates observations does so elsewhere.
+- **Derived values.** No indicators, models, signals, rankings or analytics. The
+  fetch code produces some derived fields in passing; an allow-list
+  (`fetch/allowlist.py`) strips them before anything is written, and
+  `scripts/check_allowlist.py` re-checks the files independently in CI.
+- **Credentials.** Nothing here needs one, to read or to run. The fetch targets
+  public reports.
 
-The per-source directories carry their own `README.md` describing upstream,
-cadence and attribution. The full index is [`CATALOG.md`](CATALOG.md) for humans
-and [`catalog.json`](catalog.json) for machines.
+## Layout
 
-> **Status:** the structure, catalogue format and data contract are in place; the
-> datasets themselves are being migrated in and the source directories are empty
-> until that lands. `catalog.json` is the authority on what is actually
-> published at any commit.
-
-## What is deliberately *not* in here
-
-- Derived analytics, indicators, forecasts or trading signals
-- Research, methodology or modelling work
-- Private or non-redistributable datasets
-- Application, frontend or infrastructure code
-- Any credential, token or private endpoint
-
-These live elsewhere and are out of scope for this repository by design. This
-repository has no dependency on any downstream consumer and stands alone.
+```
+data/<source>/        current-window payloads and their .status.json sidecars
+fetch/                the acquisition worker — see fetch/PORTING.md
+  allowlist.py        the only fields that may be published
+  publish_ice.py      fetch → prune → trim to window → write
+catalog.json          index of what is published right now
+scripts/              validation: catalogue, allow-list, credential shapes
+docs/                 the data contract and source provenance
+```
 
 ## Licence
 
 | What | Licence |
 |---|---|
-| Everything under `data/`, plus `catalog.json` and the documentation | [CC0 1.0 Universal](LICENSE) — public domain dedication |
-| Everything under `scripts/` | [MIT](scripts/LICENSE) |
-
-CC0 is deliberate: it places no condition whatsoever on reuse, so a consumer of
-this catalogue carries no notice, no attribution clause and no licence
-compatibility question downstream. Use the data for anything, including
-commercially, without asking.
-
-## Provenance and warranty
-
-Datasets are redistributed from publicly available sources. Per-source
-provenance and upstream links are recorded in [`docs/SOURCES.md`](docs/SOURCES.md)
-and in each source directory's README. Attribution is not required, but the
-upstream source is the citation of record and crediting it is good manners.
+| `data/`, `catalog.json`, documentation | [CC0 1.0](LICENSE) — public domain dedication |
+| `fetch/`, `scripts/` | [MIT](scripts/LICENSE) |
 
 Data is published as-is, on a best-effort basis, with no warranty of accuracy,
-completeness or availability. It is not investment advice.
-
-## Layout
-
-```
-catalog.json          machine-readable index of every published dataset
-CATALOG.md            the same index, human-readable
-LICENSE               CC0 1.0 — covers the data, catalogue and docs
-scripts/LICENSE       MIT — covers the tooling
-data/<source>/        datasets, grouped by upstream source
-schemas/              JSON Schema for the catalogue and for dataset families
-docs/                 structure, data contract and source provenance
-scripts/              validation tooling (no data collection)
-```
-
-See [`docs/STRUCTURE.md`](docs/STRUCTURE.md) for the conventions these follow.
+completeness or availability, and is not investment advice. Upstream sources are
+recorded in [`docs/SOURCES.md`](docs/SOURCES.md) and are the citation of record.

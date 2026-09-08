@@ -1,5 +1,23 @@
 {
   "catalog_version": 1,
-  "generated_at": "2026-09-08T05:20:27Z",
-  "datasets": []
+  "generated_at": "2026-09-08T06:18:54Z",
+  "datasets": [
+    {
+      "id": "ice.certified_stocks_arabica_latest",
+      "title": "ICE certified arabica stocks — current window",
+      "description": "The days most recently fetched from ICE's published certified-stock reports. A window, not a history.",
+      "source": "ice",
+      "path": "data/ice/certified_stocks_arabica_latest.json",
+      "format": "json",
+      "bytes": 205,
+      "sha256": "cd73a86b5c79fd436459176340a6c6422946fb4d2d601d7c735f1f9386a8197b",
+      "updated_at": "2026-09-08T06:18:54Z",
+      "cadence": "daily",
+      "coverage": {
+        "start": "2026-09-02",
+        "end": "2026-09-04"
+      },
+      "upstream": "https://www.ice.com/"
+    }
+  ]
 }

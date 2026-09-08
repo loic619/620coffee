@@ -20,14 +20,13 @@ local naming it already uses.
 - Dataset ids: `<source>.<family>[.<variant>]`, e.g. `ice.certified_stocks.arabica`.
 - Ids are permanent. A file may move; its id may not change or be reused.
 
-## Splitting large series
+## No series, so no splitting
 
-A dataset that grows without bound is split into era files rather than rewritten
-as one ever-larger blob, e.g. `..._2015-2019.json`, `..._2020-2024.json`. Each
-era file is a separate catalogue entry with its own `coverage` range and hash, so
-a consumer re-fetches only the era that changed — in practice only the current
-one. Closed eras never change, which keeps both bandwidth and diff noise near
-zero.
+An earlier draft of this document described splitting long series into era
+files. That no longer applies: nothing here grows without bound, because nothing
+here accumulates. A payload is the window a run fetched, and the next run
+replaces it. Repository growth is one small commit per fetch, and stays that way
+by design rather than by periodic cleanup.
 
 ## What each directory is for
 

@@ -28,6 +28,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "fetch"))
 
 from scraper.sources.ice_certified_stocks import orchestrate as o  # noqa: E402
 
+# ── PARITY BODY: identical in 619 and 620 below this line ────────────────────
+
 DAY = date(2026, 9, 7)
 
 

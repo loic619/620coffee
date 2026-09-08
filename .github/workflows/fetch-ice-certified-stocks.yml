@@ -74,21 +74,29 @@ jobs:
       # falls back to three bootstrap guesses and, failing those, the full
       # 1,810-candidate sweep. The secret buys ~121 minutes of wall clock, not
       # correctness.
+      # No `if:` on the secret here. The `secrets` context is not available in a
+      # step-level `if`, and using it there is not a soft failure: GitHub rejects
+      # the whole workflow file and creates no jobs at all. Guard in the shell.
       - name: Materialise tier-1 publish-time hints
-        if: ${{ secrets.ICE_TIER1_HINTS != '' }}
         env:
           HINTS: ${{ secrets.ICE_TIER1_HINTS }}
         run: |
-          python3 - <<'PY'
+          if [ -z "$HINTS" ]; then
+            echo "ICE_TIER1_HINTS not set — tier 1 falls back to bootstrap guesses,"
+            echo "then the full 1,810-candidate sweep. Correct, just slower."
+            exit 0
+          fi
+          python3 - <<'PYEOF'
           import json, os, pathlib
-          raw = os.environ["HINTS"]
-          times = [t.strip() for t in raw.replace(",", " ").split() if t.strip().isdigit()]
+          times = [t.strip() for t in os.environ["HINTS"].replace(",", " ").split()
+                   if t.strip().isdigit() and len(t.strip()) == 6]
           if not times:
-              raise SystemExit("ICE_TIER1_HINTS set but contained no HHMMSS values")
-          target = pathlib.Path("fetch/scraper/sources/ice_certified_stocks/stock_report_hits.json")
+              raise SystemExit("ICE_TIER1_HINTS set but held no HHMMSS values")
+          target = pathlib.Path(
+              "fetch/scraper/sources/ice_certified_stocks/stock_report_hits.json")
           target.write_text(json.dumps({"hits": [{"hhmmss": t} for t in times]}, indent=2))
           print(f"tier-1 hints materialised: {len(times)} publish second(s), no dates")
-          PY
+          PYEOF
 
       - name: Fetch and publish the current window
         run: |

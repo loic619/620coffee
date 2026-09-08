@@ -51,11 +51,10 @@ from .parse_pdfs import parse_grading_overview_pdf, parse_infested_warrant_pdf
 from .parse_stock_report import parse_stock_report
 from .parse_tenders import parse_tenders
 
-# PORTED TO 620 — see fetch/PORTING.md. Upstream (619) anchors this on the
-# frontend's public data directory, which does not exist here: 620 is an
-# acquisition worker, not an application. Output is staged instead, and
-# fetch/publish_ice.py applies the raw-field allow-list before anything
-# reaches data/ice/. Overridable so a test can point it at a tmpdir.
+# PORTED TO 620 — 619 anchors this on the frontend's public data directory,
+# which does not exist here: 620 is an acquisition worker, not an application.
+# Output is staged, and fetch/publish_ice.py applies the raw-field allow-list
+# before anything reaches data/ice/. Overridable so a test can use a tmpdir.
 OUT_DIR = Path(os.environ.get(
     "ICE_STAGE_DIR",
     Path(__file__).resolve().parents[4] / "_stage")).resolve()
@@ -229,29 +228,11 @@ def build_port_peaks(market: str, live_snapshots: list[dict], previous: dict | N
 # calls. /marketdata/ is even stricter. New defaults give Akamai breathing room
 # while still completing 180 days in <2 h.
 TIMEOUT = 30
-# PACING BASELINE (620) — validated 2026-09-08, not a value to retune casually.
-#
-# 619 uses {"public": 2.0, "marketdata": 5.0}. On GitHub's PUBLIC-repository
-# runner pool those values are refused outright by ICE:
-#
-#   run 34198991714   24 x 403, 261 x 404, 0 snapshots
-#   run 34202188869   35 x 403,   0 x 404, 0 snapshots, 4 sections blocked,
-#                     403 on the FIRST request of every section, 2m25s
-#
-# 619, the same day on the private pool and the same code: 1,191 requests,
-# 12 x 200, 0 x 403. Slower pacing cleared it — the run then progressed into the
-# expected 404-heavy timestamp search instead of being refused.
-#
-# 8.0 for /marketdata/ is the value that actually cleared the block in run
-# 34205612040. An earlier draft of this baseline kept it at 619's 5.0 — the
-# value present in BOTH refused runs — which would have left the one endpoint
-# family that was never observed succeeding at that interval untested.
-#
-# THE TWO FAMILIES ARE DELIBERATELY SEPARATE AND MUST NOT BE COLLAPSED INTO ONE
-# GLOBAL THROTTLE. That /marketdata/ (LIFFE) needs a slower interval than
-# /publicdocs/ (US reports) is observed production behaviour, not a guess.
-#
-# Do not revert or retune without telemetry giving a clear reason.
+# 2026-09-07, at the operator's call: public 2.0 → 4.0, marketdata 5.0 → 8.0.
+# The read is that both ICE paths draw on one per-IP budget, so pacing the whole
+# scraper back should lower the block rate. Not measured — the 5 Sep finding was
+# that 403s track the runner IP rather than request pacing — so if the blocks
+# continue, these are the first values to put back.
 _THROTTLE = {"public": 4.0, "marketdata": 8.0}
 _THROTTLE_CAP = 15.0           # ceiling when self-bumping on 429 retries
 TOO_MANY_429S = 4              # bail-out after this many consecutive 429s
@@ -350,21 +331,22 @@ def _record_section_block() -> None:
 # the one knob left. This overrides the 5s marketdata throttle for the sweep
 # (restored right after) to probe ICE's sequential-rate ceiling — step it down
 # 5 → 4 → 3 → 2 → 1 → 0.5 ONLY after a run at the current value draws no 429.
-# 3s, stepped down from 4s per the rule above and then MEASURED: probe 0.20
-# (run 32979574768, 2026-08-26) walked 200 sequential candidates at 3s and drew
-# zero 429s, zero transport failures, flat 0.13s latency, and a known-good
-# control that returned 200 before, four times during, and after — we were
-# never throttled and never kicked out.
-# Caveat the probe cannot settle: a worst-case sweep is 1,920 requests, not 200,
-# so this rules out a short-window limit, not a daily one. If the run telemetry
-# ever shows 429s on a long sweep, step back to 4.0 — do NOT go to 2s, since 96
-# minutes already fits the timeout and a further step buys nothing.
-# The step is what makes a MISS reachable
-# — at 4s a full 10:29–11:00 walk is 128 minutes against a 120-minute timeout,
-# so the run would always die before it could conclude anything. At 3s it is
-# 96 minutes, and "swept everything, found nothing" becomes a same-day answer.
-# PACING BASELINE (620) — 619 uses 3.0. See the note on _THROTTLE above; this is
-# the third, separate interval, governing tier-2 timestamp probing.
+# 3s came from probe 0.20 (run 32979574768, 2026-08-26): 200 sequential
+# candidates at 3s drew zero 429s, zero transport failures, flat 0.13s latency,
+# and a known-good control returned 200 before, four times during, and after.
+# The caveat that probe could not settle is that a worst-case sweep is ~1,900
+# requests, not 200 — it ruled out a short-window limit, not a daily one.
+#
+# Stepped back to 4.0 on 2026-09-07 at the operator's call, pacing the whole
+# scraper back against a per-IP budget the 403s are charged to.
+#
+# THIS INTERVAL IS WHAT DECIDES WHETHER A MISS CAN BE DECLARED. The sweep must
+# finish inside the job timeout, or "swept the whole window, found nothing" is
+# never reachable and every unlucky day dies as a timeout instead. At 4s the
+# 1,810-candidate window is 120.7 minutes, which is why the job timeout moved
+# with it — see timeout-minutes in scraper-ice-certified-stocks.yml. Changing
+# either number without re-checking the other breaks the late-release alert
+# silently.
 _STOCK_SWEEP_INTERVAL_S = 4.0
 
 # Stock_report.csv's HHMMSS publish time varies daily. Strategy is tiered:
@@ -399,7 +381,16 @@ STOCK_REPORT_HITS_PATH = Path(__file__).with_name("stock_report_hits.json")
 # A day outside the window is now an EXPECTED, ANNOUNCED outcome rather than a
 # silent hole: the run says so on Telegram, the research page lists it as
 # pending, and one operator-supplied second backfills it.
-STOCK_REPORT_SWEEP_RANGE = ((10, 29), (11, 0))
+# (H, M, S) inclusive on both ends. It was (H, M) until 2026-09-07, where the
+# end bound implicitly meant ":59" — a convention that read as an instant and
+# had already been miscounted once. Seconds are explicit now, so the window says
+# exactly what it walks.
+STOCK_REPORT_SWEEP_RANGE = ((10, 29, 50), (10, 59, 59))
+
+
+def _hhmmss_to_s(t: tuple[int, int, int]) -> int:
+    """(H, M, S) → seconds since midnight."""
+    return t[0] * 3600 + t[1] * 60 + t[2]
 # K = 10 (was 5) — wider Tier 1 keeps the cheap path covering more days as
 # the publish window expands; only matters once the hits log fills out.
 STOCK_REPORT_TIER1_K = 10
@@ -537,13 +528,13 @@ def _mark_tier1_tried(d: date) -> None:
 def _sweep_candidate_count() -> int:
     """Seconds in the sweep window.
 
-    STOCK_REPORT_SWEEP_RANGE is an inclusive range of MINUTES, so the last
-    minute contributes all 60 of its seconds — [10:29 … 11:00] ends at
-    11:00:59, not 11:00:00. Treating the bound as an instant undercounts by 59
-    and gives 1,861 where the sweep really walks 1,920.
+    Both bounds are inclusive and now carry their own seconds, so this is a
+    plain count. The old form gave only minutes and had to add the implied 59
+    itself — which is how the miss alert once claimed a window 59 seconds
+    smaller than the one actually walked.
     """
-    (lo_h, lo_m), (hi_h, hi_m) = STOCK_REPORT_SWEEP_RANGE
-    return (hi_h * 3600 + hi_m * 60 + 59) - (lo_h * 3600 + lo_m * 60) + 1
+    lo, hi = STOCK_REPORT_SWEEP_RANGE
+    return _hhmmss_to_s(hi) - _hhmmss_to_s(lo) + 1
 
 
 def _notify_late_release(day: date) -> None:
@@ -553,7 +544,8 @@ def _notify_late_release(day: date) -> None:
     the session is for someone to supply the publish second. Silence would turn
     an announced trade-off back into a silent hole."""
     lo, hi = STOCK_REPORT_SWEEP_RANGE
-    win = f"{lo[0]:02d}:{lo[1]:02d}–{hi[0]:02d}:{hi[1]:02d}"
+    win = (f"{lo[0]:02d}:{lo[1]:02d}:{lo[2]:02d}–"
+           f"{hi[0]:02d}:{hi[1]:02d}:{hi[2]:02d}")
     # Report the WINDOW first, with the GET count as a subordinate detail.
     # Printing sweep_gets alone read as though the sweep had stopped short \u2014
     # the first of these said "1870 seconds checked" against a 1,920-second
@@ -597,8 +589,8 @@ def _telegram(text: str, *, tag: str) -> None:
 # State is committed so it survives the runner, exactly like alert_state.json.
 # parents[4] is the repo root — same anchor as OUT_DIR above. parents[3] is
 # backend/, which quietly created backend/data/ instead.
-# PORTED TO 620 — upstream anchors this on the repo-root data/ directory,
-# which holds 619's private stores. Fetch state belongs with the fetcher.
+# PORTED TO 620 — 619 anchors this on the repo-root data/ directory, which
+# holds its private stores. Fetch state belongs with the fetcher here.
 BLOCK_STATE_PATH = Path(__file__).resolve().parents[2] / "state" / "ice_block_state.json"
 BLOCK_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
@@ -856,15 +848,18 @@ def _stock_report_tier1_times() -> tuple[str, ...]:
     return tuple(out)
 
 def _stock_report_sweep_times() -> list[str]:
-    """Every HH:MM:SS in the configured publish window (inclusive)."""
-    (start_hh, start_mm), (end_hh, end_mm) = STOCK_REPORT_SWEEP_RANGE
+    """Every HH:MM:SS in the configured publish window (inclusive).
+
+    Walks SECONDS, not whole minutes. The minute-based version could only ever
+    start and end on a :00/:59 boundary, so a window of 10:29:50 was not
+    expressible — it silently became 10:29:00 and bought 50 requests of nothing.
+    """
+    lo, hi = STOCK_REPORT_SWEEP_RANGE
     out: list[str] = []
-    start = start_hh * 60 + start_mm
-    end   = end_hh   * 60 + end_mm
-    for total in range(start, end + 1):
-        hh, mm = divmod(total, 60)
-        for ss in range(60):
-            out.append(f"{hh:02d}{mm:02d}{ss:02d}")
+    for total in range(_hhmmss_to_s(lo), _hhmmss_to_s(hi) + 1):
+        hh, rem = divmod(total, 3600)
+        mm, ss = divmod(rem, 60)
+        out.append(f"{hh:02d}{mm:02d}{ss:02d}")
     return out
 
 # Magic-byte / content-type expectations per source — used to flag "200 OK but

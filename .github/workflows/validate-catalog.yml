@@ -51,9 +51,9 @@ jobs:
         run: |
           # fetch/PORTING.md pins orchestrate.py as the only file differing from
           # 619, in exactly two places. Anything else is drift.
-          count=$(grep -cE "PORTED TO 620|PACING BASELINE" fetch/scraper/sources/ice_certified_stocks/orchestrate.py)
-          if [ "$count" -ne 4 ]; then
-            echo "::error::expected 4 documented divergences from 619 (2 path anchors + 2 pacing), found $count"
+          count=$(grep -c "PORTED TO 620" fetch/scraper/sources/ice_certified_stocks/orchestrate.py)
+          if [ "$count" -ne 2 ]; then
+            echo "::error::expected 2 PORTED TO 620 markers (the path anchors — pacing is now identical to 619), found $count"
             exit 1
           fi
           echo "port markers intact"

@@ -31,8 +31,13 @@ SWEEP_INTERVAL_S = 4.0        # tier-2 timestamp probing
 PUBLICDOCS_S = 4.0            # /publicdocs/ — US reports
 MARKETDATA_S = 8.0            # /marketdata/ — LIFFE
 
-# What 619 uses. Kept here so the divergence is legible.
-UPSTREAM_619 = {"sweep": 3.0, "public": 2.0, "marketdata": 5.0}
+# The values that were REFUSED on the public runner pool. 619 has since adopted
+# the same baseline as 620, so these are historical, not "what 619 uses".
+REFUSED = {"sweep": 3.0, "public": 2.0, "marketdata": 5.0}
+
+# The second-level sweep window, shared with 619.
+SWEEP_WINDOW = ((10, 29, 50), (10, 59, 59))
+SWEEP_CANDIDATES = 1810
 
 
 def test_the_pacing_baseline_is_the_validated_one():
@@ -41,14 +46,44 @@ def test_the_pacing_baseline_is_the_validated_one():
     assert orchestrate._THROTTLE["marketdata"] == MARKETDATA_S
 
 
-def test_the_public_runner_is_paced_slower_than_619():
-    """The whole point. 619's values are refused on this runner pool.
+def test_every_family_is_slower_than_the_refused_configuration():
+    """Every family must exceed the values that were refused, marketdata
+    included: 5.0 was its value in both refused runs, and 8.0 is the value
+    observed clearing the block."""
+    assert orchestrate._STOCK_SWEEP_INTERVAL_S > REFUSED["sweep"]
+    assert orchestrate._THROTTLE["public"] > REFUSED["public"]
+    assert orchestrate._THROTTLE["marketdata"] > REFUSED["marketdata"]
 
-    Every family must be slower, marketdata included: 5.0 was its value in both
-    refused runs, and 8.0 is the value observed clearing the block."""
-    assert orchestrate._STOCK_SWEEP_INTERVAL_S > UPSTREAM_619["sweep"]
-    assert orchestrate._THROTTLE["public"] > UPSTREAM_619["public"]
-    assert orchestrate._THROTTLE["marketdata"] > UPSTREAM_619["marketdata"]
+
+def test_the_sweep_window_matches_619():
+    """Fetch parity. 619 moved to a second-level window on 2026-09-07; 620 was
+    still walking whole minutes, giving 1,920 candidates over 10:29:00-11:00:59
+    against 619's 1,810 over 10:29:50-10:59:59. Pinned so they cannot drift
+    apart again unnoticed."""
+    assert orchestrate.STOCK_REPORT_SWEEP_RANGE == SWEEP_WINDOW
+    times = orchestrate._stock_report_sweep_times()
+    assert len(times) == SWEEP_CANDIDATES, (
+        f"{len(times)} sweep candidates, expected {SWEEP_CANDIDATES}"
+    )
+    assert times[0] == "102950"
+    assert times[-1] == "105959"
+    assert len(set(times)) == len(times), "duplicate candidates"
+
+
+def test_a_full_sweep_fits_the_workflow_timeout():
+    """1,810 x 4s = 121 minutes against a 150-minute timeout. If either the
+    window or the pacing grows, this is the constraint that breaks first."""
+    minutes = len(orchestrate._stock_report_sweep_times()) * orchestrate._STOCK_SWEEP_INTERVAL_S / 60
+    assert minutes < 150, f"a full sweep would take {minutes:.0f} min, exceeding the timeout"
+
+
+def test_tier1_degrades_to_bootstrap_without_hints():
+    """620 has no committed hits file — the hints arrive from a secret at run
+    time, or not at all. Either way tier 1 must produce candidates rather than
+    failing, because the fetch has to work without the secret."""
+    times = orchestrate._stock_report_tier1_times()
+    assert times, "tier 1 produced no candidates"
+    assert all(len(t) == 6 and t.isdigit() for t in times)
 
 
 def test_marketdata_stays_slower_than_publicdocs():

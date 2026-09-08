@@ -17,7 +17,7 @@ one before it costs a run.
 from __future__ import annotations
 
 import ast
-import importlib.util
+import re
 import sys
 from pathlib import Path
 
@@ -27,9 +27,43 @@ ROOT = Path(__file__).resolve().parent.parent
 PACKAGE = ROOT / "fetch" / "scraper"
 sys.path.insert(0, str(ROOT / "fetch"))
 
-# Third-party modules the fetch needs. Each must be installed by the workflow;
-# the point of listing them here is that a lazy import cannot hide one.
-THIRD_PARTY = {"requests", "xlrd", "openpyxl", "pdfplumber"}
+# Which workflow runs which part of the port. 620 now runs two acquisition jobs
+# with deliberately different dependency sets — the poller needs playwright and
+# not the spreadsheet parsers, the ICE fetch the reverse — so "is it installed
+# somewhere in this repo" is no longer the question worth asking. The question
+# is whether the workflow that runs THIS module installs what it imports.
+#
+# Every module under fetch/scraper/ must appear here. Adding a file without
+# assigning it to a workflow fails test_every_module_is_assigned_to_a_workflow,
+# which is the point: a new module nothing installs for is a run waiting to die.
+WORKFLOW_FOR_MODULE = {
+    "acaphe_poller.py":   "poll-acaphe-quotes.yml",
+    # Imported by the poller (safe_write_json) and by nothing on the ICE path.
+    "validate_export.py": "poll-acaphe-quotes.yml",
+}
+DEFAULT_WORKFLOW = "fetch-ice-certified-stocks.yml"
+
+# Package name in the pip line -> module name it provides, where they differ.
+DISTRIBUTION_TO_MODULE = {"psycopg2-binary": "psycopg2", "pyyaml": "yaml"}
+
+
+def declared_for(workflow: str) -> set[str]:
+    """The third-party modules a workflow's pip install line provides.
+
+    Read from the YAML rather than restated here, so the test cannot drift from
+    what CI actually installs — restating it is how a list goes stale and starts
+    passing for the wrong reason.
+    """
+    text = (ROOT / ".github" / "workflows" / workflow).read_text()
+    lines = [ln for ln in text.splitlines()
+             if "pip install" in ln and not ln.lstrip().startswith("#")]
+    assert len(lines) == 1, f"{workflow}: expected one pip install line, found {len(lines)}"
+    packages = re.sub(r"^.*pip install(\s+--\S+)*\s+", "", lines[0].strip()).split()
+    out = set()
+    for package in packages:
+        name = package.strip("'\"").split("<")[0].split(">")[0].split("=")[0].lower()
+        out.add(DISTRIBUTION_TO_MODULE.get(name, name))
+    return out
 
 
 def module_files() -> list[Path]:
@@ -73,12 +107,36 @@ def test_every_relative_import_resolves(path: Path):
         )
 
 
+def test_every_module_is_assigned_to_a_workflow():
+    """A module nothing runs is either dead code or a missing install step."""
+    for path in module_files():
+        if path.name == "__init__.py":
+            continue
+        workflow = WORKFLOW_FOR_MODULE.get(path.name, DEFAULT_WORKFLOW)
+        assert (ROOT / ".github" / "workflows" / workflow).is_file(), (
+            f"{path.name} is assigned to {workflow}, which does not exist"
+        )
+
+
 @pytest.mark.parametrize("path", module_files(), ids=lambda p: p.name)
-def test_every_third_party_import_is_a_declared_dependency(path: Path):
+def test_every_third_party_import_is_installed_by_the_workflow_that_runs_it(path: Path):
     """A lazily imported package that nothing installs fails days later, on
-    whichever run first reaches the code path that needs it."""
+    whichever run first reaches the code path that needs it.
+
+    Checked against the ONE workflow that runs this module, not against
+    everything the repository installs anywhere: the poller does not get
+    openpyxl and the ICE fetch does not get playwright, and a module importing
+    the wrong one would pass a union check and die in production.
+    """
+    workflow = WORKFLOW_FOR_MODULE.get(path.name, DEFAULT_WORKFLOW)
+    declared = declared_for(workflow)
     tree = ast.parse(path.read_text(), filename=str(path))
-    stdlib_or_local = {"scraper", "fetch", "allowlist"}
+    # Local packages, plus the standard library by name rather than by "can I
+    # import it here?" — the previous version skipped anything importable in
+    # the test environment, which silently exempted a third-party package that
+    # happened to be installed locally and was NOT in the workflow's pip line.
+    local = {"scraper", "fetch", "allowlist"}
+    stdlib = set(sys.stdlib_module_names) | {"__future__"}
 
     for node in ast.walk(tree):
         names = []
@@ -88,12 +146,12 @@ def test_every_third_party_import_is_a_declared_dependency(path: Path):
             names = [node.module.split(".")[0]]
 
         for name in names:
-            if name in stdlib_or_local or importlib.util.find_spec(name) is not None:
+            if name in local or name in stdlib:
                 continue
-            assert name in THIRD_PARTY, (
-                f"{path.name} imports third-party '{name}', which is neither "
-                f"installed nor declared in THIRD_PARTY. The fetch workflow must "
-                f"install it."
+            assert name in declared, (
+                f"{path.name} imports third-party '{name}', which {workflow} "
+                f"does not install (it installs {sorted(declared)}). Add it "
+                f"there, or move the module to a workflow that has it."
             )
 
 

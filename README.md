@@ -57,21 +57,35 @@ and [`catalog.json`](catalog.json) for machines.
 These live elsewhere and are out of scope for this repository by design. This
 repository has no dependency on any downstream consumer and stands alone.
 
-## Terms and attribution
+## Licence
+
+| What | Licence |
+|---|---|
+| Everything under `data/`, plus `catalog.json` and the documentation | [CC0 1.0 Universal](LICENSE) — public domain dedication |
+| Everything under `scripts/` | [MIT](scripts/LICENSE) |
+
+CC0 is deliberate: it places no condition whatsoever on reuse, so a consumer of
+this catalogue carries no notice, no attribution clause and no licence
+compatibility question downstream. Use the data for anything, including
+commercially, without asking.
+
+## Provenance and warranty
 
 Datasets are redistributed from publicly available sources. Per-source
-provenance, upstream links and attribution requirements are recorded in
-[`docs/SOURCES.md`](docs/SOURCES.md) and in each source directory's README.
+provenance and upstream links are recorded in [`docs/SOURCES.md`](docs/SOURCES.md)
+and in each source directory's README. Attribution is not required, but the
+upstream source is the citation of record and crediting it is good manners.
 
 Data is published as-is, on a best-effort basis, with no warranty of accuracy,
-completeness or availability. It is not investment advice. Where an upstream
-source is authoritative, it — not this repository — is the citation of record.
+completeness or availability. It is not investment advice.
 
 ## Layout
 
 ```
 catalog.json          machine-readable index of every published dataset
 CATALOG.md            the same index, human-readable
+LICENSE               CC0 1.0 — covers the data, catalogue and docs
+scripts/LICENSE       MIT — covers the tooling
 data/<source>/        datasets, grouped by upstream source
 schemas/              JSON Schema for the catalogue and for dataset families
 docs/                 structure, data contract and source provenance

@@ -57,46 +57,11 @@ jobs:
         # when a grading-overview or infested-warrant PDF is actually reached.
         run: pip install --quiet requests 'xlrd<2.0' openpyxl pdfplumber
 
-      # Tier-1 publish-time hints. 619 learns these from its own captures and
-      # keeps the full date-to-second history in stock_report_hits.json, which
-      # is private timing intelligence and does not belong in a public repo.
-      #
-      # What is injected here is the MINIMAL form that makes tier 1 work: the
-      # most frequent publish seconds, with no dates attached. That is enough
-      # for _stock_report_tier1_times(), which only reads `hhmmss`, and it is
-      # not enough to reconstruct when any particular report was published.
-      #
-      # It lands on the runner only. The file is git-ignored, so it is never
-      # committed, and this workflow runs solely on schedule/dispatch — never on
-      # pull_request — so the secret is never exposed to a contributed branch.
-      #
-      # Without the secret the fetch still works: _stock_report_tier1_times()
-      # falls back to three bootstrap guesses and, failing those, the full
-      # 1,810-candidate sweep. The secret buys ~121 minutes of wall clock, not
-      # correctness.
-      # No `if:` on the secret here. The `secrets` context is not available in a
-      # step-level `if`, and using it there is not a soft failure: GitHub rejects
-      # the whole workflow file and creates no jobs at all. Guard in the shell.
-      - name: Materialise tier-1 publish-time hints
-        env:
-          HINTS: ${{ secrets.ICE_TIER1_HINTS }}
-        run: |
-          if [ -z "$HINTS" ]; then
-            echo "ICE_TIER1_HINTS not set — tier 1 falls back to bootstrap guesses,"
-            echo "then the full 1,810-candidate sweep. Correct, just slower."
-            exit 0
-          fi
-          python3 - <<'PYEOF'
-          import json, os, pathlib
-          times = [t.strip() for t in os.environ["HINTS"].replace(",", " ").split()
-                   if t.strip().isdigit() and len(t.strip()) == 6]
-          if not times:
-              raise SystemExit("ICE_TIER1_HINTS set but held no HHMMSS values")
-          target = pathlib.Path(
-              "fetch/scraper/sources/ice_certified_stocks/stock_report_hits.json")
-          target.write_text(json.dumps({"hits": [{"hhmmss": t} for t in times]}, indent=2))
-          print(f"tier-1 hints materialised: {len(times)} publish second(s), no dates")
-          PYEOF
+      # No tier-1 secret, and nothing to materialise. The dated publish-time
+      # log is committed at fetch/scraper/sources/ice_certified_stocks/
+      # stock_report_hits.json, exactly as in 619, so tier 0 and tier 1 are
+      # both live from the moment this job checks out. The commit step at the
+      # bottom writes back whatever the run learned.
 
       - name: Fetch and publish the current window
         run: |
@@ -117,9 +82,9 @@ jobs:
         run: python3 scripts/check_no_secrets.py
 
       # Run telemetry, for comparing 620's request economics against 619's.
-      # Uploaded as an artifact rather than committed: request counts and the
-      # 403/404 distribution are operational detail about our own fetching, and
-      # the run-stats file also carries publish-time hints that stay private.
+      # An artifact rather than a commit: these are per-run diagnostics with no
+      # value to a later run, and committing them would add a churn commit to
+      # every fetch. 30 days is long enough to compare against 619.
       - name: Upload run telemetry
         if: always()
         uses: actions/upload-artifact@v4
@@ -135,7 +100,15 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # The hits log is added alongside the payload: it is learned state,
+          # and a run that captures a new publish second has to write that back
+          # or tier 0 is empty for that date on the next run. `git add` on a
+          # missing path exits 128 and would kill the step under `bash -e`, so
+          # it is added only if the fetcher actually wrote it (619 hit exactly
+          # this — run 32955091040 fetched successfully and threw it away).
           git add data/ice catalog.json CATALOG.md
+          HITS=fetch/scraper/sources/ice_certified_stocks/stock_report_hits.json
+          [ -f "$HITS" ] && git add "$HITS"
           if git diff --cached --quiet; then
             echo "No change in the published window."
             exit 0

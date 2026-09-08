@@ -65,6 +65,9 @@ jobs:
       - name: Verify nothing outside the allow-list is about to be published
         run: python3 scripts/check_allowlist.py
 
+      - name: Verify payloads contain only records inside their window
+        run: python3 scripts/check_payload_window.py
+
       - name: Verify no credential-shaped strings
         run: python3 scripts/check_no_secrets.py
 

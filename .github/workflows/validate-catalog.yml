@@ -32,6 +32,9 @@ jobs:
       - name: Verify published payloads carry only allow-listed raw fields
         run: python3 scripts/check_allowlist.py
 
+      - name: Verify payloads contain only records inside their window
+        run: python3 scripts/check_payload_window.py
+
       - name: Refuse anything that looks like a credential
         run: python3 scripts/check_no_secrets.py
 

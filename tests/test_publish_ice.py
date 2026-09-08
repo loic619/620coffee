@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import sys
+from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
@@ -194,3 +195,101 @@ def test_an_empty_fetch_does_not_overwrite_a_good_payload(tmp_path, monkeypatch)
 
     assert failures == 2
     assert json.loads((out / "certified_stocks_arabica_latest.json").read_text()) == good
+
+
+# ── the payload-window invariant ─────────────────────────────────────────────
+# scripts/check_payload_window.py is the independent re-check of the trim above.
+# These pin it against the two ways it can be defeated.
+
+import subprocess  # noqa: E402
+
+
+def _write_payload(out: Path, market: str, payload: dict, declared: str) -> None:
+    import hashlib
+    body = json.dumps(payload, indent=1, sort_keys=True) + "\n"
+    (out / f"{market}_latest.json").write_text(body)
+    (out / f"{market}_latest.status.json").write_text(json.dumps({
+        "dataset": f"ice.{market}", "ok": True, "fetched_at": "2026-09-08T06:00:00Z",
+        "sha256": hashlib.sha256(body.encode()).hexdigest(), "bytes": len(body.encode()),
+        "snapshots": len(payload.get("snapshots") or []), "trimmed_before": declared,
+    }, indent=2) + "\n")
+
+
+def _run_window_check(data_root: Path) -> subprocess.CompletedProcess:
+    import os
+    env = dict(os.environ, PYTHONPATH=str(ROOT / "fetch"))
+    script = ROOT / "scripts" / "check_payload_window.py"
+    patched = script.read_text().replace(
+        'DATA = ROOT / "data"', f'DATA = Path({str(data_root)!r})')
+    runner = data_root / "_check.py"
+    runner.write_text(patched)
+    return subprocess.run([sys.executable, str(runner)], capture_output=True, text=True, env=env)
+
+
+def test_history_hidden_in_a_nested_array_fails_the_window_check(tmp_path):
+    """The exact regression: a three-day payload whose nested report arrays
+    still carry fifteen months of accumulated records."""
+    out = tmp_path / "ice"
+    out.mkdir(parents=True)
+    _write_payload(out, "certified_stocks_robusta", {
+        "snapshots": [{"date": "2026-09-07", "total_lots_certified": 1}],
+        "recent_activity": {"tenders": [
+            {"date": "2025-06-25", "lots": 1},      # fifteen months old
+            {"date": "2026-09-07", "lots": 2},
+        ]},
+    }, declared="2026-08-26")
+
+    result = _run_window_check(tmp_path)
+    assert result.returncode == 1
+    assert "recent_activity.tenders" in result.stderr
+    assert "2025-06-25" in result.stderr
+
+
+def test_a_new_nested_section_is_covered_without_being_listed(tmp_path):
+    """The check walks every array rather than a list of known sections, so a
+    report family added upstream is covered the day it appears."""
+    out = tmp_path / "ice"
+    out.mkdir(parents=True)
+    _write_payload(out, "certified_stocks_robusta", {
+        "snapshots": [{"date": "2026-09-07"}],
+        "some_new_report_family": [{"report_date": "2024-01-01", "value": 1}],
+    }, declared="2026-08-26")
+
+    result = _run_window_check(tmp_path)
+    assert result.returncode == 1
+    assert "some_new_report_family" in result.stderr
+
+
+def test_a_declared_window_wider_than_any_real_run_fails(tmp_path):
+    """Otherwise a bug that declared a five-year cutoff would make the
+    in-window assertion vacuous."""
+    out = tmp_path / "ice"
+    out.mkdir(parents=True)
+    _write_payload(out, "certified_stocks_arabica",
+                   {"snapshots": [{"date": "2026-09-07"}]}, declared="2020-01-01")
+
+    result = _run_window_check(tmp_path)
+    assert result.returncode == 1
+    assert "widest permitted acquisition window" in result.stderr
+
+
+def test_a_payload_without_a_status_sidecar_fails(tmp_path):
+    out = tmp_path / "ice"
+    out.mkdir(parents=True)
+    (out / "certified_stocks_arabica_latest.json").write_text('{"snapshots": []}')
+
+    result = _run_window_check(tmp_path)
+    assert result.returncode == 1
+    assert "no .status.json" in result.stderr
+
+
+def test_a_clean_window_passes(tmp_path):
+    out = tmp_path / "ice"
+    out.mkdir(parents=True)
+    _write_payload(out, "certified_stocks_arabica", {
+        "snapshots": [{"date": "2026-09-07"}],
+        "recent_activity": {"tenders": [{"date": "2026-09-06"}]},
+    }, declared=(date.today() - timedelta(days=13)).isoformat())
+
+    result = _run_window_check(tmp_path)
+    assert result.returncode == 0, result.stderr

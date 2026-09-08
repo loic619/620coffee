@@ -121,3 +121,70 @@ def test_the_hits_log_is_not_git_ignored():
     )
     assert (root / "fetch" / "scraper" / "sources" / "ice_certified_stocks"
             / "stock_report_hits.json").exists()
+
+
+# ── the Acaphe poller's operating limits ─────────────────────────────────────
+
+POLLER = ".github/workflows/poll-acaphe-quotes.yml"
+
+
+@pytest.fixture
+def poll_job():
+    doc = _load(Path(__file__).resolve().parent.parent / POLLER)
+    return doc, doc["jobs"]["poll"]
+
+
+def test_the_poller_never_runs_on_a_contributed_branch(poll_job):
+    """It holds acaphe credentials and an Upstash WRITE token. A pull_request
+    trigger would run it from a branch anyone can open, and this repository is
+    public."""
+    doc, _ = poll_job
+    assert set(doc["on"]) <= {"schedule", "workflow_dispatch"}
+
+
+def test_the_poller_is_read_only(poll_job):
+    """619's copy needs contents: write to commit the VN snapshot into its
+    frontend. Nothing is committed here — the quotes are login-gated and stay
+    out of this public repo — so the token stays read-only."""
+    doc, _ = poll_job
+    assert doc["permissions"] == {"contents": "read"}
+
+
+def test_the_poller_has_no_database_url(poll_job):
+    """The Postgres behind DATABASE_URL is 619's private history. 620 holds no
+    database, and _save_vn_prices_to_db is guarded by `if DATABASE_URL:` — so
+    the variable's absence is what keeps that path unreachable, and the
+    poller's dependency list correspondingly short."""
+    text = (Path(__file__).resolve().parent.parent / POLLER).read_text()
+    assert "DATABASE_URL" not in "\n".join(
+        ln for ln in text.splitlines() if not ln.lstrip().startswith("#"))
+
+
+def test_the_freshest_poller_tick_wins(poll_job):
+    """Live quotes: a queued backlog of stale ticks is worse than dropping
+    them, which is the opposite of the ICE fetch's queue-never-cancel rule."""
+    doc, _ = poll_job
+    assert doc["concurrency"]["group"] == "acaphe-poll"
+    assert doc["concurrency"]["cancel-in-progress"] is True
+
+
+def test_the_poller_keeps_619s_cron_blocks(poll_job):
+    """Both minute lists are load-bearing. The off-peak minutes dodge a cron
+    throttle GH imposed on this workflow twice, and the 00:00-07:59 UTC block
+    is the Vietnamese morning — the only window in which acaphe publishes the
+    Dak Lak / HCM bid-offer at all."""
+    doc, _ = poll_job
+    assert set(doc["on"]["schedule"][i]["cron"] for i in range(2)) == {
+        "3,18,33,48 8-19 * * 1-5", "7,27,47 0-7 * * 1-5"}
+
+
+def test_vn_only_is_keyed_to_the_vietnam_cron_exactly(poll_job):
+    """ACAPHE_VN_ONLY is compared against the literal cron string that fired.
+    If the cron is edited and this string is not, every VN tick starts pushing
+    an off-session futures payload over a good live_quotes snapshot AND
+    refreshing its timestamp, which blinds the freshness checker to a dead
+    feed. Pinning them together is what stops that."""
+    doc, job = poll_job
+    step = next(s for s in job["steps"] if s.get("name", "").startswith("Poll once"))
+    vn_cron = doc["on"]["schedule"][1]["cron"]
+    assert vn_cron in step["env"]["ACAPHE_VN_ONLY"]

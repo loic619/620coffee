@@ -1,0 +1,140 @@
+name: "Acaphe Live Quotes Poll"
+
+# Polls acaphe.com via the --once mode of acaphe_poller.py and pushes the latest
+# snapshot to Upstash Redis. Ported from 619's "0.1 – Acaphe Live Quotes Poll".
+#
+# Why it lives here: this is acquisition, and it is the highest-frequency job
+# either repository runs — ~50 ticks a week, each launching a browser on a cache
+# miss. Free on a public repository, metered on a private one. Redis is reached
+# the same way from either, so nothing about the live path changes.
+#
+# Required repo secrets:
+#   UPSTASH_REDIS_REST_URL
+#   UPSTASH_REDIS_REST_TOKEN
+#   ACAPHE_USER
+#   ACAPHE_PASS
+#
+# DATABASE_URL is deliberately NOT set here, and must not be. The Postgres
+# behind it is 619's private history; 620 is an acquisition worker and holds no
+# database. _save_vn_prices_to_db is guarded by `if DATABASE_URL:` in the
+# poller, so with the variable unset that path is never entered — which is why
+# the dependency list below is shorter than 619's (see the install step).
+
+on:
+  schedule:
+    # Both blocks are 619's, unchanged. The minute lists are not arbitrary:
+    # GH Actions has silently throttled this workflow's cron twice, and the
+    # off-peak minutes (:03/:18/:33/:48) are less contended than the :00/:15/
+    # :30/:45 marks everyone schedules on. Editing the file resets the
+    # workflow's scheduling priority, which is the standard workaround.
+    #
+    # Trading hours, Mon-Fri UTC — RC London 08:00-18:30, KC New York
+    # 08:30-19:00.
+    - cron: '3,18,33,48 8-19 * * 1-5'
+    # VN physical window. acaphe publishes Dak Lak / HCM bid-offer and the R2
+    # FOB differential only during the Vietnamese morning and strips them later
+    # in the day. 00:00-07:59 UTC = 07:00-14:59 ICT covers that whole window
+    # while staying entirely BEFORE the 08:00 UTC London open, which keeps the
+    # VN_ONLY semantics below honest: futures are genuinely off-session then.
+    - cron: '7,27,47 0-7 * * 1-5'
+  # cron-job.org dispatches this externally as well, because GH's scheduler
+  # throttles. A dispatch carries no `github.event.schedule`, so it runs at full
+  # fidelity rather than VN-only — see ACAPHE_VN_ONLY below.
+  workflow_dispatch:
+
+# schedule + workflow_dispatch only. This job holds acaphe credentials and an
+# Upstash write token; a pull_request trigger would run it from a contributed
+# branch. Guarded by tests/test_workflows.py.
+
+# Read-only. 619's copy needs `contents: write` to commit the VN snapshot into
+# its frontend; nothing is committed here — see the poller's PORTED TO 620
+# anchors and docs/ACAPHE.md.
+permissions:
+  contents: read
+
+# If a previous tick is still running when the next fires, cancel it. Stale
+# snapshots are worthless for live quotes, and queueing would let a backlog
+# build unbounded when a slow fetch coincides with the next tick.
+concurrency:
+  group: acaphe-poll
+  cancel-in-progress: true
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    # 619 raised this from 4 to 8: the clock starts when the job is ASSIGNED,
+    # and a runner-starved tick once burned 3+ minutes in queue and setup before
+    # being killed mid-poll. cancel-in-progress still guarantees the freshest
+    # tick wins, so the higher ceiling costs nothing on good days.
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip when the secrets are missing
+        id: gate
+        env:
+          URL:   ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+        run: |
+          # Read through `env:`, never `if: ${{ secrets.X }}`. The secrets
+          # context is not available in a step-level `if:`, and using it there
+          # does not fail that step — GitHub rejects the whole workflow file and
+          # creates no jobs at all. 620 shipped exactly that bug once.
+          if [ -z "$URL" ] || [ -z "$TOKEN" ]; then
+            echo "::warning::Upstash secrets not configured — add UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN to enable polling."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.skip == 'false'
+        with:
+          python-version: '3.11'
+
+      # requests + playwright only. 619 additionally installs sqlalchemy and
+      # psycopg2-binary, and its comment warns they are NOT optional there —
+      # without them the VN daily DB write fails silently and the history stops
+      # accruing. That reasoning does not carry over: 620 has no DATABASE_URL,
+      # so _save_vn_prices_to_db is never called rather than called and failing.
+      # If a DATABASE_URL is ever added here, add those two back with it.
+      - name: Install Python dependencies
+        if: steps.gate.outputs.skip == 'false'
+        run: pip install --quiet requests playwright
+
+      # Cache the chromium binary (~120 MB) across the ~50 runs/week. Installed
+      # unconditionally even though the poller reuses a cached session and
+      # usually never launches a browser: whether the cookie cache hits is only
+      # known inside the poller, and a miss with no Chromium on disk would turn
+      # a recoverable re-login into a failed run.
+      - name: Cache Playwright browser
+        if: steps.gate.outputs.skip == 'false'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}
+
+      - name: Install Playwright Chromium
+        if: steps.gate.outputs.skip == 'false'
+        run: sudo rm -f /etc/apt/sources.list.d/*microsoft* /etc/apt/sources.list.d/*azure* || true; playwright install chromium --with-deps || playwright install chromium
+
+      - name: Poll once and push to Upstash
+        if: steps.gate.outputs.skip == 'false'
+        working-directory: fetch
+        env:
+          UPSTASH_REDIS_REST_URL:   ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+          ACAPHE_USER:              ${{ secrets.ACAPHE_USER }}
+          ACAPHE_PASS:              ${{ secrets.ACAPHE_PASS }}
+          # The 00:00-08:00 UTC block chases the Vietnamese day only. At that
+          # hour London and New York are shut, so the futures half of the
+          # payload is off-session: persist the VN snapshot but leave the
+          # live_quotes key alone, or a good snapshot would be overwritten with
+          # an out-of-session one AND have its timestamp refreshed, blinding the
+          # freshness checker to a genuinely dead feed.
+          #
+          # github.event.schedule is the literal cron string that fired, and is
+          # empty for workflow_dispatch — so a manual or cron-job.org run stays
+          # full-fidelity.
+          ACAPHE_VN_ONLY: ${{ github.event.schedule == '7,27,47 0-7 * * 1-5' }}
+        run: python -m scraper.acaphe_poller --once

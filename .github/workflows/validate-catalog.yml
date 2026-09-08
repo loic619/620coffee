@@ -1,4 +1,4 @@
-name: validate catalogue
+name: validate
 
 on:
   push:
@@ -24,10 +24,33 @@ jobs:
           python-version: '3.12'
 
       - name: Install validation dependencies
-        run: pip install --quiet jsonschema
+        run: pip install --quiet jsonschema pytest requests ruff==0.16.6
+
+      - name: Lint
+        run: ruff check .
 
       - name: Validate catalogue against data/
         run: python3 scripts/validate_catalog.py
 
+      - name: Verify published payloads carry only allow-listed raw fields
+        run: python3 scripts/check_allowlist.py
+
+      - name: Verify payloads contain only records inside their window
+        run: python3 scripts/check_payload_window.py
+
       - name: Refuse anything that looks like a credential
         run: python3 scripts/check_no_secrets.py
+
+      - name: Tests
+        run: python3 -m pytest tests/ -q
+
+      - name: Verify the port has not drifted beyond its two documented hunks
+        run: |
+          # fetch/PORTING.md pins orchestrate.py as the only file differing from
+          # 619, in exactly two places. Anything else is drift.
+          count=$(grep -c "PORTED TO 620" fetch/scraper/sources/ice_certified_stocks/orchestrate.py)
+          if [ "$count" -ne 2 ]; then
+            echo "::error::expected 2 PORTED TO 620 markers, found $count"
+            exit 1
+          fi
+          echo "port markers intact"

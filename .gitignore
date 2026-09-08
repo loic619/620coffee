@@ -5,3 +5,24 @@ venv/
 .DS_Store
 *.tmp
 *.swp
+
+# ── ICE fetch state — deliberately NOT committed ─────────────────────────────
+# The fetcher writes these as it runs. They stay on the runner and die with it:
+#
+#   stock_report_hits.json    the exact second-of-day ICE published each report.
+#                             That is an observed timing edge, and it is private
+#                             to 619 by design. It only exists to let a run skip
+#                             ahead in the sweep — an optimisation that saves
+#                             billed minutes, which is precisely what 620 does
+#                             not spend. Sweeping blind here costs nothing.
+#   stock_report_cursor.json  where a sweep got to; carries publish-time hints.
+#   ice_run_stats.json        per-run request/throttle diagnostics.
+#   state/ice_block_state.json  edge-triggered block notification state.
+#
+# Consequence, accepted deliberately: each 620 run sweeps from scratch and takes
+# longer in wall-clock. Free compute is the whole point of running it here.
+fetch/scraper/sources/ice_certified_stocks/stock_report_hits.json
+fetch/scraper/sources/ice_certified_stocks/stock_report_cursor.json
+fetch/scraper/sources/ice_certified_stocks/ice_run_stats.json
+fetch/state/
+_stage/

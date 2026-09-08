@@ -2,6 +2,18 @@
 
 What a consumer of this repository can rely on, and what it must not.
 
+## A payload is a window, not a series
+
+This is the contract's most important clause. Every dataset here holds **only
+the observations the most recent run fetched** — typically the last few business
+days. Each run replaces the payload; older observations are not retained here
+and are not recoverable from here.
+
+If you need a series, accumulate it yourself. Consumers are expected to append
+each window to their own store, keyed by observation date. Delivery is designed
+for that: windows overlap deliberately, so re-delivering a day you already hold
+is normal and must be idempotent on your side.
+
 ## The catalogue is the interface
 
 `catalog.json` at the repository root is the single authority on what is
@@ -45,9 +57,11 @@ treat it as absent. Do not discover datasets by listing directories.
   Fields are not removed or retyped without a `catalog_version` bump, and a
   dataset being withdrawn is first marked `"deprecated": true` for at least one
   publish cycle before its entry is removed.
-- **Append-mostly history.** Historical eras are not silently rewritten. A
-  correction to closed history changes that era file's hash and its
-  `updated_at`; it is a normal, detectable event, not a hidden one.
+- **Overlapping windows.** Consecutive runs deliberately re-deliver recent days,
+  so a missed run self-heals on the next one. Key on the observation date.
+- **A failed fetch does not overwrite a good payload.** If a run collects
+  nothing, the previous payload stays and the `.status.json` records the
+  failure with `ok: false`. Check the status before trusting the payload.
 
 ## Non-guarantees
 

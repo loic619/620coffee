@@ -1,0 +1,11 @@
+{
+  "note": "Business days on which ICE Futures Europe published no robusta certified-stock report at all — exchange holidays and closures. These are not misses: no publish second exists to find, so they are excluded from the session count rather than left pending forever.",
+  "days": [
+    {
+      "date": "2026-08-31",
+      "reason": "UK summer bank holiday — ICE Futures Europe closed, no robusta report published",
+      "source": "operator",
+      "recorded": "2026-09-04T16:43:45Z"
+    }
+  ]
+}

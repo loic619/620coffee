@@ -1,0 +1,89 @@
+name: fetch ICE certified stocks
+
+# 620 is an acquisition worker. This is the workload it exists to run: in 619
+# the same fetch cost ~1,247 billed minutes a week — 38% of that repo's entire
+# Actions bill — because the run is a deliberately rate-limit-paced sweep at
+# 4s/request and spends ~42 minutes mostly waiting. Waiting is free here.
+#
+# It publishes the days it just fetched, and nothing else. History belongs to
+# 619; see fetch/PORTING.md and docs/DATA_CONTRACT.md.
+#
+# No secrets. ICE's reports are public, and the ported orchestrator's Telegram
+# helper no-ops when TELEGRAM_BOT_TOKEN is unset — which it always is here.
+
+on:
+  schedule:
+    # Daily, Tue–Sat 01:05 UTC: by then the prior business day's full report set
+    # has been published for hours. Off the :00 mark, which GitHub's scheduler
+    # contends hardest for.
+    - cron: '5 1 * * 2-6'
+    # Weekly catch-up, Sunday: a wider window that self-heals any day the daily
+    # run missed. Free, and the merge in 619 is idempotent, so re-delivering
+    # days already held costs nothing.
+    - cron: '25 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Business-day window to fetch"
+        required: false
+        default: "3"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fetch-ice-certified-stocks
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    # The sweep is slow by design and slower here, because 620 deliberately does
+    # not persist the publish-time hints that let 619 skip ahead (.gitignore
+    # explains why). Generous, since the clock costs nothing.
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install fetch dependencies
+        run: pip install --quiet requests xlrd openpyxl
+
+      - name: Fetch and publish the current window
+        run: |
+          DAYS="${{ inputs.days || (github.event.schedule == '25 2 * * 0' && '30' || '3') }}"
+          echo "window = $DAYS business days"
+          python3 fetch/publish_ice.py --days "$DAYS"
+
+      - name: Refresh the catalogue index
+        run: python3 scripts/validate_catalog.py --update
+
+      - name: Verify nothing outside the allow-list is about to be published
+        run: python3 scripts/check_allowlist.py
+
+      - name: Verify payloads contain only records inside their window
+        run: python3 scripts/check_payload_window.py
+
+      - name: Verify no credential-shaped strings
+        run: python3 scripts/check_no_secrets.py
+
+      - name: Commit the payload
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ice catalog.json CATALOG.md
+          if git diff --cached --quiet; then
+            echo "No change in the published window."
+            exit 0
+          fi
+          git commit -m "data: ICE certified stocks window [skip ci]"
+          for attempt in 1 2 3; do
+            git pull --rebase --autostash origin "${GITHUB_REF_NAME}" && git push && exit 0
+            sleep $((RANDOM % 5 + 3))
+          done
+          echo "::error::could not push the ICE window"
+          exit 1

@@ -1,9 +1,9 @@
 {
   "dataset": "ice.certified_stocks_arabica",
   "ok": true,
-  "fetched_at": "2026-09-08T10:39:24Z",
+  "fetched_at": "2026-09-08T11:22:26Z",
   "payload": "certified_stocks_arabica_latest.json",
-  "sha256": "84f1c75e693dc78f5021d3f4f131abb75827f72846f2c8445049758b2d05f91d",
+  "sha256": "01958057f7c35f4e08c7d93112c8a9b453799f57cfbc3790d892f6feb9b4c19c",
   "bytes": 36274,
   "snapshots": 2,
   "window": {

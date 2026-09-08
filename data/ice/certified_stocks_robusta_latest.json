@@ -5,7 +5,7 @@
   "2026-09-04",
   "2026-09-07"
  ],
- "generated_at": "2026-09-08T10:39:24+00:00",
+ "generated_at": "2026-09-08T11:22:26+00:00",
  "latest_detail": {
   "stock_report": {
    "cut_off_date": "2026-09-06",
@@ -1640,6 +1640,58 @@
   ]
  },
  "snapshots": [
+  {
+   "by_port_lots": {
+    "AMS": 0,
+    "ANT": 3587,
+    "BAR": 0,
+    "BRE": 0,
+    "FEL": 0,
+    "HAM": 0,
+    "LEH": 0,
+    "LIV": 0,
+    "LON": 1371,
+    "NOR": 0,
+    "ROT": 0,
+    "TRI": 24
+   },
+   "cut_off_date": "2026-09-02",
+   "date": "2026-09-03",
+   "lots_bought_today": 12,
+   "lots_graded_today": 0,
+   "lots_sold_today": 12,
+   "non_tend_lots": 2,
+   "suspended_lots": 0,
+   "tenders_today": 0,
+   "total_bags_60kg_equivalent": 830333,
+   "total_lots_certified": 4982
+  },
+  {
+   "by_port_lots": {
+    "AMS": 0,
+    "ANT": 3587,
+    "BAR": 0,
+    "BRE": 0,
+    "FEL": 0,
+    "HAM": 0,
+    "LEH": 0,
+    "LIV": 0,
+    "LON": 1371,
+    "NOR": 0,
+    "ROT": 0,
+    "TRI": 24
+   },
+   "cut_off_date": "2026-09-03",
+   "date": "2026-09-04",
+   "lots_bought_today": 0,
+   "lots_graded_today": 0,
+   "lots_sold_today": 0,
+   "non_tend_lots": 2,
+   "suspended_lots": 0,
+   "tenders_today": 0,
+   "total_bags_60kg_equivalent": 830333,
+   "total_lots_certified": 4982
+  },
   {
    "by_port_lots": {
     "AMS": 0,

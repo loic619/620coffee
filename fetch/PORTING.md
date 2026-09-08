@@ -16,13 +16,14 @@ reproduced exactly so the relative imports (`from ... import run_degradations`,
 That is deliberate: while both repositories run this code in parallel, a diff
 between their outputs has to mean *the fetch differs*, not *the code differs*.
 
-**`orchestrate.py` is the only file that differs, in exactly two places**, both
-marked `PORTED TO 620`:
+**`orchestrate.py` is the only file that differs, in exactly three places** —
+two path anchors marked `PORTED TO 620`, plus one marked `PACING EXPERIMENT`:
 
 | Line | Upstream (619) | Here | Why |
 |---|---|---|---|
 | `OUT_DIR` | `frontend/public/data` | `_stage/`, via `ICE_STAGE_DIR` | 620 has no frontend. Output is staged, then filtered by `publish_ice.py`. |
 | `BLOCK_STATE_PATH` | repo-root `data/` | `fetch/state/` | Repo-root `data/` here is the published payload directory. |
+| `_STOCK_SWEEP_INTERVAL_S` | `3.0` | `5.0` | **Live experiment**, not a permanent divergence. Testing whether ICE's refusal of the public runner is sensitive to request cadence. Revert to 3.0 once concluded. |
 
 Verify with:
 

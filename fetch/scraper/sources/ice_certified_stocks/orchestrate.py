@@ -340,7 +340,18 @@ def _record_section_block() -> None:
 # — at 4s a full 10:29–11:00 walk is 128 minutes against a 120-minute timeout,
 # so the run would always die before it could conclude anything. At 3s it is
 # 96 minutes, and "swept everything, found nothing" becomes a same-day answer.
-_STOCK_SWEEP_INTERVAL_S = 3.0
+# PACING EXPERIMENT, 2026-09-08 — the ONLY variable changed from 619's value.
+# 619 uses 3.0. Raised to 5.0 to test whether ICE's refusal of the public runner
+# is sensitive to request cadence.
+#
+# Baseline this is measured against — 620 run 34202188869, interval 3.0:
+#   0 x 200 / 35 x 403 / 0 x 404, 403 on the first request of every section,
+#   four sections blocked, 2m25s, no snapshots, no payload written.
+#
+# Nothing else differs: headers, User-Agent, cookies, request order, retry
+# count, URL construction, parser logic and payload schema are all untouched.
+# tests/test_pacing_experiment.py pins this value so it cannot drift silently.
+_STOCK_SWEEP_INTERVAL_S = 5.0
 
 # Stock_report.csv's HHMMSS publish time varies daily. Strategy is tiered:
 #   Tier 1 — try the K most-frequent HHMMSS values from past successful

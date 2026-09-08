@@ -1,0 +1,35 @@
+# Ruff configuration.
+#
+# Deliberately mirrors 619's backend/pyproject.toml. Most of the Python here is
+# a byte-identical port of 619's ICE scraper (see fetch/PORTING.md), so linting
+# it under a different rule set would report errors that are not errors upstream
+# and would push someone into "fixing" vendored code — breaking the byte
+# identity that makes the shadow comparison meaningful.
+#
+# Keep these two files in step. If 619's config changes, change this one.
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+extend-exclude = ["**/__pycache__"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes (undefined names, unused imports)
+    "W",   # pycodestyle warnings
+    "B",   # flake8-bugbear
+    "I",   # isort
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line length
+    "E402",  # module-level import not at top — used for sys.path tweaks
+    "B008",  # function call in default arg
+    # Stylistic preferences the upstream codebase consistently breaks; not bugs.
+    "E701",  # multiple statements on one line (colon)
+    "E702",  # multiple statements on one line (semicolon)
+    "E731",  # lambda assigned to a name
+    "E741",  # ambiguous var names
+    "B905",  # zip() without strict=
+]

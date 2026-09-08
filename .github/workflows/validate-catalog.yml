@@ -24,7 +24,10 @@ jobs:
           python-version: '3.12'
 
       - name: Install validation dependencies
-        run: pip install --quiet jsonschema pytest requests
+        run: pip install --quiet jsonschema pytest requests ruff==0.16.6
+
+      - name: Lint
+        run: ruff check .
 
       - name: Validate catalogue against data/
         run: python3 scripts/validate_catalog.py

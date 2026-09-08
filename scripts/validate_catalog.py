@@ -204,7 +204,7 @@ def render_markdown(catalog: dict) -> str:
 
 
 def update(catalog: dict) -> dict:
-    now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    now = dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     for entry in catalog.get("datasets", []):
         target = ROOT / entry.get("path", "")
         if not target.is_file():

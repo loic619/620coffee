@@ -94,12 +94,53 @@ def trim_to_window(doc: dict, cutoff: str) -> tuple[dict, dict]:
     return walk(doc), removed
 
 
+def _record_telemetry(orchestrate, out: dict) -> None:
+    """Write ice_run_stats.json and print the request picture.
+
+    orchestrate.py records its own telemetry from `__main__` only, and 620
+    imports `run()` as a library — so nothing here was writing the stats file
+    and the workflow's telemetry artifact came up empty. Observed on run
+    34219640496: "No files were found with the provided path". Do what 619's
+    CLI does, from this wrapper, so orchestrate.py stays byte-identical.
+
+    Never fatal. This runs after a successful fetch and must not be the thing
+    that loses it.
+    """
+    stats = orchestrate._RUN_STATS
+    try:
+        orchestrate._record_run_stats(
+            outcome=("aborted_429" if stats["aborted_by_429"]
+                     else "aborted_403" if stats["aborted_by_403"]
+                     else "completed"),
+            sweep_day=out.get("_sweep_day"),
+        )
+    except Exception as e:  # noqa: BLE001
+        print(f"[fetch]   run telemetry not recorded: {e}")
+
+    # Same two lines 619 prints, so a run's economics can be read off the log
+    # without downloading the artifact — and compared line for line with 619's.
+    print(f"WAIT: publicdocs {stats['wait_publicdocs_s']/60:.1f} min · "
+          f"marketdata {stats['wait_marketdata_s']/60:.1f} min · "
+          f"retry-after {sum(stats['retry_after_waits'])/60:.1f} min "
+          f"over {stats['requests']} requests")
+    print(f"RATE: {stats['http_429']} x 429 · "
+          f"{stats['http_403']} x 403 · "
+          f"{len(stats['retry_after_waits'])} Retry-After waits "
+          f"({round(sum(stats['retry_after_waits']))}s total) · "
+          f"{stats['throttle_bumps']} throttle bumps · "
+          f"{stats['sweep_gets']} sweep GETs · "
+          f"{stats['http_404']} x 404 · "
+          f"{stats['ok_200']} x 200")
+
+
 def run_fetch(days: int) -> dict:
     """Run the ported orchestrator. merge=False → the fetched window only."""
     os.environ.setdefault("ICE_STAGE_DIR", str(STAGE))
     from scraper.sources.ice_certified_stocks import orchestrate
 
-    return orchestrate.run(days_back=days, write=True, merge=False, skip_monthly=False)
+    out = orchestrate.run(days_back=days, write=True, merge=False, skip_monthly=False)
+    _record_telemetry(orchestrate, out)
+    return out
 
 
 def publish(cutoff: str, dry_run: bool = False) -> int:

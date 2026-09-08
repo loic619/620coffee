@@ -293,3 +293,42 @@ def test_a_clean_window_passes(tmp_path):
 
     result = _run_window_check(tmp_path)
     assert result.returncode == 0, result.stderr
+
+
+# ── run telemetry ────────────────────────────────────────────────────────────
+
+def test_the_run_stats_file_is_written_and_the_rate_line_printed(tmp_path, monkeypatch, capsys):
+    """620 imports orchestrate.run() as a library, and orchestrate records its
+    telemetry from __main__ only — so nothing wrote ice_run_stats.json here and
+    the workflow's artifact step reported "No files were found" (run
+    34219640496). _record_telemetry closes that, from the wrapper, so
+    orchestrate.py stays byte-identical to 619's.
+    """
+    from scraper.sources.ice_certified_stocks import orchestrate
+
+    monkeypatch.setattr(orchestrate, "RUN_STATS_PATH", tmp_path / "ice_run_stats.json")
+    monkeypatch.setitem(orchestrate._RUN_STATS, "http_403", 0)
+    monkeypatch.setitem(orchestrate._RUN_STATS, "ok_200", 12)
+    monkeypatch.setitem(orchestrate._RUN_STATS, "http_404", 261)
+
+    publish_ice._record_telemetry(orchestrate, {"_sweep_day": None})
+
+    runs = json.loads((tmp_path / "ice_run_stats.json").read_text())["runs"]
+    assert runs and runs[-1]["outcome"] == "completed"
+
+    rate = [ln for ln in capsys.readouterr().out.splitlines() if ln.startswith("RATE:")]
+    assert rate, "the RATE line is what makes a run's 403/404/200 readable from the log"
+    assert "0 x 403" in rate[-1] and "261 x 404" in rate[-1] and "12 x 200" in rate[-1]
+
+
+def test_telemetry_never_costs_the_run_its_data(tmp_path, monkeypatch, capsys):
+    """It runs after a successful fetch. It must not be what loses it."""
+    from scraper.sources.ice_certified_stocks import orchestrate
+
+    def boom(*a, **k):
+        raise OSError("read-only file system")
+
+    monkeypatch.setattr(orchestrate, "_record_run_stats", boom)
+    publish_ice._record_telemetry(orchestrate, {})          # must not raise
+
+    assert "not recorded" in capsys.readouterr().out

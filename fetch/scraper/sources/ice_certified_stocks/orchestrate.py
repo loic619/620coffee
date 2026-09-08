@@ -229,7 +229,25 @@ def build_port_peaks(market: str, live_snapshots: list[dict], previous: dict | N
 # calls. /marketdata/ is even stricter. New defaults give Akamai breathing room
 # while still completing 180 days in <2 h.
 TIMEOUT = 30
-_THROTTLE = {"public": 2.0, "marketdata": 5.0}
+# PACING BASELINE (620) — validated 2026-09-08, not a value to retune casually.
+#
+# 619 uses {"public": 2.0, "marketdata": 5.0}. On GitHub's PUBLIC-repository
+# runner pool those values are refused outright by ICE:
+#
+#   run 34198991714   24 x 403, 261 x 404, 0 snapshots
+#   run 34202188869   35 x 403,   0 x 404, 0 snapshots, 4 sections blocked,
+#                     403 on the FIRST request of every section, 2m25s
+#
+# 619, the same day on the private pool and the same code: 1,191 requests,
+# 12 x 200, 0 x 403. Slower pacing cleared it — the run then progressed into the
+# expected 404-heavy timestamp search instead of being refused.
+#
+# THE TWO FAMILIES ARE DELIBERATELY SEPARATE AND MUST NOT BE COLLAPSED INTO ONE
+# GLOBAL THROTTLE. That /marketdata/ (LIFFE) needs a slower interval than
+# /publicdocs/ (US reports) is observed production behaviour, not a guess.
+#
+# Do not revert or retune without telemetry giving a clear reason.
+_THROTTLE = {"public": 4.0, "marketdata": 5.0}
 _THROTTLE_CAP = 15.0           # ceiling when self-bumping on 429 retries
 TOO_MANY_429S = 4              # bail-out after this many consecutive 429s
 # Same idea for 403, which had no bail-out at all. A missing report answers 404,
@@ -340,7 +358,9 @@ def _record_section_block() -> None:
 # — at 4s a full 10:29–11:00 walk is 128 minutes against a 120-minute timeout,
 # so the run would always die before it could conclude anything. At 3s it is
 # 96 minutes, and "swept everything, found nothing" becomes a same-day answer.
-_STOCK_SWEEP_INTERVAL_S = 3.0
+# PACING BASELINE (620) — 619 uses 3.0. See the note on _THROTTLE above; this is
+# the third, separate interval, governing tier-2 timestamp probing.
+_STOCK_SWEEP_INTERVAL_S = 4.0
 
 # Stock_report.csv's HHMMSS publish time varies daily. Strategy is tiered:
 #   Tier 1 — try the K most-frequent HHMMSS values from past successful

@@ -24,7 +24,10 @@ jobs:
           python-version: '3.12'
 
       - name: Install validation dependencies
-        run: pip install --quiet jsonschema pytest requests ruff==0.16.6
+        # The fetch dependencies are needed too: test_pacing_baseline.py imports
+        # orchestrate to assert the real constants rather than grepping for them,
+        # and orchestrate pulls in the parsers. Same pins as the fetch workflow.
+        run: pip install --quiet jsonschema pytest ruff==0.16.6 requests 'xlrd<2.0' openpyxl pdfplumber
 
       - name: Lint
         run: ruff check .
@@ -48,9 +51,9 @@ jobs:
         run: |
           # fetch/PORTING.md pins orchestrate.py as the only file differing from
           # 619, in exactly two places. Anything else is drift.
-          count=$(grep -c "PORTED TO 620" fetch/scraper/sources/ice_certified_stocks/orchestrate.py)
-          if [ "$count" -ne 2 ]; then
-            echo "::error::expected 2 PORTED TO 620 markers, found $count"
+          count=$(grep -cE "PORTED TO 620|PACING BASELINE" fetch/scraper/sources/ice_certified_stocks/orchestrate.py)
+          if [ "$count" -ne 4 ]; then
+            echo "::error::expected 4 documented divergences from 619 (2 path anchors + 2 pacing), found $count"
             exit 1
           fi
           echo "port markers intact"

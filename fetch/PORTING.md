@@ -24,7 +24,7 @@ path anchors marked `PORTED TO 620`, and two pacing constants marked
 |---|---|---|---|
 | `OUT_DIR` | `frontend/public/data` | `_stage/`, via `ICE_STAGE_DIR` | 620 has no frontend. Output is staged, then filtered by `publish_ice.py`. |
 | `BLOCK_STATE_PATH` | repo-root `data/` | `fetch/state/` | Repo-root `data/` here is the published payload directory. |
-| `_THROTTLE` | `{"public": 2.0, "marketdata": 5.0}` | `{"public": 4.0, "marketdata": 5.0}` | 619's values are refused outright on the public runner pool. |
+| `_THROTTLE` | `{"public": 2.0, "marketdata": 5.0}` | `{"public": 4.0, "marketdata": 8.0}` | 619's values are refused outright on the public runner pool. |
 | `_STOCK_SWEEP_INTERVAL_S` | `3.0` | `4.0` | Same reason. |
 
 ### The pacing baseline is load-bearing
@@ -41,7 +41,7 @@ global throttle**:
 ```
 sweep timestamp probing     4.0s
 publicdocs / US reports     4.0s
-marketdata / LIFFE          5.0s
+marketdata / LIFFE          8.0s
 ```
 
 That `/marketdata/` needs the slower interval is observed behaviour, not a

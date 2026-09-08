@@ -29,7 +29,7 @@ from scraper.sources.ice_certified_stocks import orchestrate  # noqa: E402
 # The validated baseline, by endpoint family.
 SWEEP_INTERVAL_S = 4.0        # tier-2 timestamp probing
 PUBLICDOCS_S = 4.0            # /publicdocs/ — US reports
-MARKETDATA_S = 5.0            # /marketdata/ — LIFFE
+MARKETDATA_S = 8.0            # /marketdata/ — LIFFE
 
 # What 619 uses. Kept here so the divergence is legible.
 UPSTREAM_619 = {"sweep": 3.0, "public": 2.0, "marketdata": 5.0}
@@ -42,9 +42,13 @@ def test_the_pacing_baseline_is_the_validated_one():
 
 
 def test_the_public_runner_is_paced_slower_than_619():
-    """The whole point. 619's values are refused on this runner pool."""
+    """The whole point. 619's values are refused on this runner pool.
+
+    Every family must be slower, marketdata included: 5.0 was its value in both
+    refused runs, and 8.0 is the value observed clearing the block."""
     assert orchestrate._STOCK_SWEEP_INTERVAL_S > UPSTREAM_619["sweep"]
     assert orchestrate._THROTTLE["public"] > UPSTREAM_619["public"]
+    assert orchestrate._THROTTLE["marketdata"] > UPSTREAM_619["marketdata"]
 
 
 def test_marketdata_stays_slower_than_publicdocs():

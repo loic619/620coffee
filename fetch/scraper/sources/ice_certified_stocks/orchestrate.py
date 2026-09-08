@@ -1506,6 +1506,56 @@ def _have_monthly(feed: str, key_field: str, month_key: str) -> bool:
     return any((r.get(key_field) or "")[:7] == month_key for r in rows)
 
 
+def _reconcile_iss_recv_derived(doc: dict) -> list[str]:
+    """Bring lots_sold_today / lots_bought_today back in line with the raw record.
+
+    Deliberately narrow, because this rewrites history that is already published:
+
+      * only the two fields derived from iss_recv_daily.grand_total;
+      * only for a date that HAS a stored raw record — an absent record means
+        "not fetched yet", never "zero", and must not force a value;
+      * only where the stored value actually disagrees;
+      * only where the snapshot already carries the field, so the shape of a
+        snapshot never changes and no downstream reader meets a new key;
+      * only between numbers, so a malformed record cannot put a string or a
+        null where a count belongs.
+
+    Returns the dates it corrected, for the caller to report.
+    """
+    totals: dict[str, dict] = {}
+    for entry in (doc.get("recent_activity") or {}).get("iss_recv_daily", []):
+        day, grand = entry.get("date"), entry.get("grand_total")
+        if day and isinstance(grand, dict):
+            totals[day] = grand
+
+    corrected: list[str] = []
+    for snap in doc.get("snapshots") or []:
+        grand = totals.get(snap.get("date"))
+        if not grand:
+            continue
+        changed = False
+        for field, source in (("lots_sold_today", "sold"),
+                              ("lots_bought_today", "bought")):
+            if field not in snap:
+                continue
+            raw, held = grand.get(source), snap[field]
+            if not isinstance(raw, (int, float)) or isinstance(raw, bool):
+                continue
+            if not isinstance(held, (int, float)) or isinstance(held, bool):
+                continue
+            if raw != held:
+                snap[field] = raw
+                changed = True
+        if changed:
+            corrected.append(snap["date"])
+
+    if corrected:
+        shown = ", ".join(corrected[:5])
+        more = f" (+{len(corrected) - 5} more)" if len(corrected) > 5 else ""
+        print(f"  → iss/recv reconciled against the raw record: {shown}{more}")
+    return corrected
+
+
 def _merge_robusta(new: dict, old: dict) -> dict:
     # daily_fetched: union. This is the ledger of days whose per-day sources
     # (gradings, appeals, iss/recv, tenders, overview, infested) have actually
@@ -1533,6 +1583,22 @@ def _merge_robusta(new: dict, old: dict) -> dict:
         new.setdefault("recent_activity", {})[key] = sorted(
             merged.values(), key=lambda e: e.get("date") or ""
         )
+
+    # The daily issuer/receiver report is published AFTER the stock report, so
+    # the run that builds a day's snapshot usually has no iss/recv figures for
+    # it yet and _robusta_snapshot writes 0. A later run does fetch the report
+    # into recent_activity.iss_recv_daily above — but nothing used to go back
+    # and correct the snapshot, so the zero stood permanently.
+    #
+    # Not theoretical: this file disagreed with its own raw records on
+    # 2026-08-27 (3,000 lots recorded, snapshot 0), 2026-09-01 and 2026-09-03
+    # (12 each, snapshot 0). Found by the 620 shadow comparison, which fetches
+    # the same days later in the day and therefore got them right.
+    #
+    # The raw record IS the definition of these two fields, and the merge above
+    # is last-write-wins by date, so the stored record is never staler than the
+    # snapshot that was derived from it. Reconciling here is the whole fix.
+    _reconcile_iss_recv_derived(new)
 
     # monthly: union by month key.
     def _merge_monthly(key: str, k_field: str) -> list:

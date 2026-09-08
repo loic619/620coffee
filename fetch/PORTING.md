@@ -16,13 +16,38 @@ reproduced exactly so the relative imports (`from ... import run_degradations`,
 That is deliberate: while both repositories run this code in parallel, a diff
 between their outputs has to mean *the fetch differs*, not *the code differs*.
 
-**`orchestrate.py` is the only file that differs, in exactly two places**, both
-marked `PORTED TO 620`:
+**`orchestrate.py` is the only file that differs, in exactly four places** — two
+path anchors marked `PORTED TO 620`, and two pacing constants marked
+`PACING BASELINE`:
 
-| Line | Upstream (619) | Here | Why |
+| What | Upstream (619) | Here | Why |
 |---|---|---|---|
 | `OUT_DIR` | `frontend/public/data` | `_stage/`, via `ICE_STAGE_DIR` | 620 has no frontend. Output is staged, then filtered by `publish_ice.py`. |
 | `BLOCK_STATE_PATH` | repo-root `data/` | `fetch/state/` | Repo-root `data/` here is the published payload directory. |
+| `_THROTTLE` | `{"public": 2.0, "marketdata": 5.0}` | `{"public": 4.0, "marketdata": 5.0}` | 619's values are refused outright on the public runner pool. |
+| `_STOCK_SWEEP_INTERVAL_S` | `3.0` | `4.0` | Same reason. |
+
+### The pacing baseline is load-bearing
+
+ICE answers GitHub's **public**-repository runner pool with `403` at 619's
+pacing, from the first request of every section — a WAF page, not the file
+server. The same code on 619's private pool the same day: 1,191 requests,
+12 × 200, 0 × 403. Slowing the requests cleared it, and the run then progressed
+into the expected 404-heavy timestamp search.
+
+Three intervals, deliberately separate, and **not to be collapsed into one
+global throttle**:
+
+```
+sweep timestamp probing     4.0s
+publicdocs / US reports     4.0s
+marketdata / LIFFE          5.0s
+```
+
+That `/marketdata/` needs the slower interval is observed behaviour, not a
+guess. `tests/test_pacing_baseline.py` pins all of it, including that the
+families stay distinct. Do not revert these to 619's values to "reduce the
+diff" — that restores the 403.
 
 Verify with:
 

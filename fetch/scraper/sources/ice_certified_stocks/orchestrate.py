@@ -229,7 +229,12 @@ def build_port_peaks(market: str, live_snapshots: list[dict], previous: dict | N
 # calls. /marketdata/ is even stricter. New defaults give Akamai breathing room
 # while still completing 180 days in <2 h.
 TIMEOUT = 30
-_THROTTLE = {"public": 2.0, "marketdata": 5.0}
+# PORTED TO 620 — env-tunable, defaults identical to 619. Made configurable
+# rather than edited so the code path stays byte-equivalent unless the workflow
+# sets these, and so a pacing experiment is reverted by removing an env var
+# rather than by touching this file again.
+_THROTTLE = {"public": float(os.environ.get("ICE_THROTTLE_PUBLIC", "2.0")),
+             "marketdata": float(os.environ.get("ICE_THROTTLE_MARKETDATA", "5.0"))}
 _THROTTLE_CAP = 15.0           # ceiling when self-bumping on 429 retries
 TOO_MANY_429S = 4              # bail-out after this many consecutive 429s
 # Same idea for 403, which had no bail-out at all. A missing report answers 404,
@@ -340,7 +345,8 @@ def _record_section_block() -> None:
 # — at 4s a full 10:29–11:00 walk is 128 minutes against a 120-minute timeout,
 # so the run would always die before it could conclude anything. At 3s it is
 # 96 minutes, and "swept everything, found nothing" becomes a same-day answer.
-_STOCK_SWEEP_INTERVAL_S = 3.0
+# PORTED TO 620 — env-tunable, default identical to 619 (3.0).
+_STOCK_SWEEP_INTERVAL_S = float(os.environ.get("ICE_SWEEP_INTERVAL_S", "3.0"))
 
 # Stock_report.csv's HHMMSS publish time varies daily. Strategy is tiered:
 #   Tier 1 — try the K most-frequent HHMMSS values from past successful

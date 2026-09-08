@@ -59,6 +59,24 @@ jobs:
         run: pip install --quiet requests 'xlrd<2.0' openpyxl pdfplumber
 
       - name: Fetch and publish the current window
+        # PACING EXPERIMENT, 2026-09-08. Two runs were refused wholesale by ICE
+        # (0 x 200, 35 x 403 from the first request of every section) while 619
+        # succeeded three times the same day. orchestrate.py's own notes say the
+        # cause is the runner's egress IP and that tuning the interval will not
+        # fix it. Testing that anyway, at the owner's request and with their
+        # domain experience against the file's conclusion.
+        #
+        # Both levers are raised together on purpose. The sweep interval alone
+        # would prove nothing: in the failing run the tier-2 sweep never issued
+        # a request, so it paces traffic that does not exist. _THROTTLE is what
+        # governed all 35 refused requests.
+        #
+        # Remove these three lines to revert; the defaults in orchestrate.py are
+        # 619's values.
+        env:
+          ICE_SWEEP_INTERVAL_S: "5.0"      # was 3.0
+          ICE_THROTTLE_PUBLIC: "5.0"       # was 2.0
+          ICE_THROTTLE_MARKETDATA: "8.0"   # was 5.0
         run: |
           DAYS="${{ inputs.days || (github.event.schedule == '25 2 * * 0' && '30' || '3') }}"
           echo "window = $DAYS business days"

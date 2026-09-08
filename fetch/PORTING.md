@@ -16,13 +16,20 @@ reproduced exactly so the relative imports (`from ... import run_degradations`,
 That is deliberate: while both repositories run this code in parallel, a diff
 between their outputs has to mean *the fetch differs*, not *the code differs*.
 
-**`orchestrate.py` is the only file that differs, in exactly two places**, both
+**`orchestrate.py` is the only file that differs, in exactly four places**, all
 marked `PORTED TO 620`:
 
-| Line | Upstream (619) | Here | Why |
+| What | Upstream (619) | Here | Why |
 |---|---|---|---|
 | `OUT_DIR` | `frontend/public/data` | `_stage/`, via `ICE_STAGE_DIR` | 620 has no frontend. Output is staged, then filtered by `publish_ice.py`. |
 | `BLOCK_STATE_PATH` | repo-root `data/` | `fetch/state/` | Repo-root `data/` here is the published payload directory. |
+| `_THROTTLE` | `{"public": 2.0, "marketdata": 5.0}` | same values, from `ICE_THROTTLE_PUBLIC` / `ICE_THROTTLE_MARKETDATA` | Pacing experiments are set in the workflow and reverted by removing an env var, instead of editing this file each time. |
+| `_STOCK_SWEEP_INTERVAL_S` | `3.0` | same value, from `ICE_SWEEP_INTERVAL_S` | As above. |
+
+The last two **default to 619's values**, so the code path is behaviourally
+identical unless the workflow sets them. That keeps the byte-comparison
+argument intact: a difference in output still means the fetch differed, and the
+env block in the workflow says exactly how.
 
 Verify with:
 

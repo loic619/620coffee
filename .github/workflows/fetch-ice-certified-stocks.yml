@@ -51,7 +51,12 @@ jobs:
           python-version: '3.12'
 
       - name: Install fetch dependencies
-        run: pip install --quiet requests xlrd openpyxl
+        # Mirrors 619's ICE workflow. xlrd is pinned below 2.0 deliberately:
+        # 2.x dropped the legacy .xls BIFF format that ICE's arabica report
+        # uses, and an unpinned install silently breaks that parse. pdfplumber
+        # is imported lazily inside parse_pdfs.py, so its absence surfaces only
+        # when a grading-overview or infested-warrant PDF is actually reached.
+        run: pip install --quiet requests 'xlrd<2.0' openpyxl pdfplumber
 
       - name: Fetch and publish the current window
         run: |
@@ -70,6 +75,21 @@ jobs:
 
       - name: Verify no credential-shaped strings
         run: python3 scripts/check_no_secrets.py
+
+      # Run telemetry, for comparing 620's request economics against 619's.
+      # Uploaded as an artifact rather than committed: request counts and the
+      # 403/404 distribution are operational detail about our own fetching, and
+      # the run-stats file also carries publish-time hints that stay private.
+      - name: Upload run telemetry
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ice-run-stats
+          path: |
+            fetch/scraper/sources/ice_certified_stocks/ice_run_stats.json
+            fetch/scraper/sources/ice_certified_stocks/stock_report_cursor.json
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Commit the payload
         run: |

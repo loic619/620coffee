@@ -6,22 +6,25 @@ venv/
 *.tmp
 *.swp
 
-# ── ICE fetch state — deliberately NOT committed ─────────────────────────────
-# The fetcher writes these as it runs. They stay on the runner and die with it:
+# ── ICE fetch state ─────────────────────────────────────────────────────────
+# stock_report_hits.json is NOT here on purpose. It is the dated publish-time
+# log — one entry per date — and it is the learned state behind tiers 0 and 1.
+# 619 commits its copy; 620 commits this one. Both repos run the same fetcher
+# and must learn the same way, so an ignored (and therefore per-run, throwaway)
+# copy here would mean 620 relearning from zero on every run and searching in a
+# different order from 619 — which is exactly what the shadow comparison is
+# supposed to be measuring against. The dated history is not sensitive: ICE
+# publishes these reports publicly and the log records only when it did so.
 #
-#   stock_report_hits.json    the exact second-of-day ICE published each report.
-#                             That is an observed timing edge, and it is private
-#                             to 619 by design. It only exists to let a run skip
-#                             ahead in the sweep — an optimisation that saves
-#                             billed minutes, which is precisely what 620 does
-#                             not spend. Sweeping blind here costs nothing.
-#   stock_report_cursor.json  where a sweep got to; carries publish-time hints.
-#   ice_run_stats.json        per-run request/throttle diagnostics.
+# These stay uncommitted. They are per-run, not learned:
+#
+#   stock_report_cursor.json  where an interrupted sweep got to, plus the list
+#                             of dates tier 1 has already been spent on. Both
+#                             are meaningful only within a run's own lifetime.
+#   ice_run_stats.json        per-run request/throttle diagnostics. Uploaded as
+#                             a workflow artifact instead, where it is kept for
+#                             30 days without accreting into git history.
 #   state/ice_block_state.json  edge-triggered block notification state.
-#
-# Consequence, accepted deliberately: each 620 run sweeps from scratch and takes
-# longer in wall-clock. Free compute is the whole point of running it here.
-fetch/scraper/sources/ice_certified_stocks/stock_report_hits.json
 fetch/scraper/sources/ice_certified_stocks/stock_report_cursor.json
 fetch/scraper/sources/ice_certified_stocks/ice_run_stats.json
 fetch/state/

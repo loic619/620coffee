@@ -43,54 +43,35 @@ still walking whole minutes — 1,920 candidates over 10:29:00–11:00:59 agains
 this note exists to catch. Re-verify whenever 619's ICE code changes; the diff
 is the audit.
 
-### Tier-1 publish-time hints
+### Tier-1 publish-time state
 
-619 learns publish seconds from its own captures and keeps the full
-date-to-second history in `stock_report_hits.json`. That is private timing
-intelligence and is not committed here.
+`stock_report_hits.json` is committed here, exactly as it is in 619, and holds
+the same dated history: one entry per date, `{"date", "hhmmss"}`. It was
+bootstrapped from 619's copy so 620 starts with the same tier-0 and tier-1
+knowledge rather than relearning from zero, and the fetch workflow commits it
+back after every run.
 
-620 receives the **minimal** form at run time instead: the `ICE_TIER1_HINTS`
-repository secret carries the most frequent publish seconds with **no dates**,
-and a workflow step materialises them into the git-ignored hits file. That is
-enough for `_stock_report_tier1_times()`, which reads only `hhmmss`, and not
-enough to reconstruct when any particular report was published.
+There is **no secret**. An earlier design injected an undated
+`ICE_TIER1_HINTS` repository secret because the date-to-second mapping was
+assumed to be private; it is not. ICE publishes these reports publicly and the
+log records only when it did so. That design has been removed: it gave 620 a
+different state model from 619, left tier 0 dead here, and made the two repos
+search in different orders — which would have quietly hollowed out the shadow
+comparison it was supposed to be validated by.
 
 Consequences, stated plainly:
 
-- **Tier 1 works** — the cheap fast path is available.
-- **Tier 0 does not.** `_recorded_time_for()` needs a date-to-second mapping and
-  gets `None`. Per-date hole recovery therefore does not run here. That is
-  acceptable because 620 fetches a three-day current window and 619 keeps doing
-  the backfills.
-- **Without the secret the fetch still works**, falling back to three bootstrap
-  guesses and then the full 1,810-candidate sweep. The secret buys ~121 minutes
-  of wall clock, not correctness.
-- The fetch workflow runs only on `schedule` and `workflow_dispatch`, never on
-  `pull_request`, so the secret is never exposed to a contributed branch.
+- **Tier 0 works.** `_recorded_time_for()` resolves a date that either repo has
+  already captured, so a known day is one GET rather than a search.
+- **Tier 1 works and keeps learning.** Ranking is derived from this file by the
+  same top-K frequency computation, so 619 and 620 produce the same candidate
+  list from the same history.
+- **No secret is required** to run the fetch, and nothing about tier 0 or
+  tier 1 depends on repository configuration.
 
-### The pacing baseline is load-bearing
-
-ICE answers GitHub's **public**-repository runner pool with `403` at 619's
-pacing, from the first request of every section — a WAF page, not the file
-server. The same code on 619's private pool the same day: 1,191 requests,
-12 × 200, 0 × 403. Slowing the requests cleared it, and the run then progressed
-into the expected 404-heavy timestamp search.
-
-Three intervals, deliberately separate, and **not to be collapsed into one
-global throttle**:
-
-```
-sweep timestamp probing     4.0s
-publicdocs / US reports     4.0s
-marketdata / LIFFE          8.0s
-```
-
-That `/marketdata/` needs the slower interval is observed behaviour, not a
-guess. `tests/test_pacing_baseline.py` pins all of it, including that the
-families stay distinct. Do not revert these to 619's values to "reduce the
-diff" — that restores the 403.
-
-Verify with:
+`tests/test_stock_report_hits_state.py` pins every one of those semantics, and
+its twin in 619 (`backend/scraper/tests/test_stock_report_hits_state.py`) is
+byte-identical below its PARITY BODY marker.
 
 ```sh
 diff <path-to-619>/backend/scraper/sources/ice_certified_stocks/orchestrate.py \
@@ -104,7 +85,7 @@ Anything beyond those two hunks is drift and should be reconciled.
 | File | Why it stayed in 619 |
 |---|---|
 | `news_emit.py` | Writes engine commentary into the news feed. Not acquisition. |
-| `record_observation.py`, `build_run_history.py` | Record observed ICE publish times — a timing edge that stays private. |
+| `record_observation.py`, `build_run_history.py` | Operator tooling and a 619-side run ledger. Not acquisition; the fetcher already records its own captures into `stock_report_hits.json`. |
 | `probe_*.py` | Diagnostics; they cost no measurable Actions time. |
 
 `cohort_outflow.py` *is* here only because `orchestrate.py` imports it. Its
@@ -126,14 +107,18 @@ It runs with `merge=False`, so the result holds only the days the run fetched.
 `scripts/check_allowlist.py` then re-checks what is on disk, independently of
 the code that wrote it, in CI and before every commit.
 
-## Fetch state is not committed
+## What fetch state is committed, and what is not
 
-`stock_report_hits.json`, `stock_report_cursor.json`, `ice_run_stats.json` and
-`fetch/state/` are git-ignored — see `.gitignore`, which explains why. The
-short version: the hits file records the exact second ICE publishes each report.
-That is an observed timing edge and it stays private. It exists only to let a
-run skip ahead in the sweep, saving billed minutes — which is exactly the cost
-620 does not pay.
+**Committed:** `stock_report_hits.json`. It is learned state — see above — and
+must survive across runs or 620 would search differently from 619 on every
+fetch.
+
+**Not committed:** `stock_report_cursor.json`, `ice_run_stats.json` and
+`fetch/state/` — see `.gitignore`. These are per-run: where an interrupted
+sweep got to, which dates tier 1 has already been spent on, request/throttle
+diagnostics, and block-notification edge state. None of them carry forward.
+Run stats go up as a 30-day workflow artifact instead, which is enough to
+compare 620's request economics against 619's without a churn commit per fetch.
 
 ## Keeping the two copies from drifting
 

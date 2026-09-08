@@ -77,13 +77,21 @@ def test_a_full_sweep_fits_the_workflow_timeout():
     assert minutes < 150, f"a full sweep would take {minutes:.0f} min, exceeding the timeout"
 
 
-def test_tier1_degrades_to_bootstrap_without_hints():
-    """620 has no committed hits file — the hints arrive from a secret at run
-    time, or not at all. Either way tier 1 must produce candidates rather than
-    failing, because the fetch has to work without the secret."""
+def test_tier1_is_live_from_the_committed_hits_log():
+    """620 commits stock_report_hits.json, bootstrapped from 619, so tier 1 is
+    a real fast path here from the first run and not a bootstrap guess. No
+    secret is involved: see fetch/PORTING.md."""
+    hits = orchestrate._load_stock_report_hits()
+    assert len(hits) > 3, (
+        "the committed hits log is empty or missing — tier 1 has fallen back to "
+        "bootstrap guesses and tier 0 is dead"
+    )
+    assert any(h.get("hhmmss") for h in hits)
+
     times = orchestrate._stock_report_tier1_times()
     assert times, "tier 1 produced no candidates"
     assert all(len(t) == 6 and t.isdigit() for t in times)
+    assert len(set(times)) == len(times), "tier 1 offered the same second twice"
 
 
 def test_marketdata_stays_slower_than_publicdocs():

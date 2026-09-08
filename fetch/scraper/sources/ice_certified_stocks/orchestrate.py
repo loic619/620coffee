@@ -1071,13 +1071,36 @@ def pull_arabica_ageing(month_end: date) -> tuple[str, dict | None]:
 
 
 def pull_stock_report(d: date, *, sweep: bool = True) -> tuple[str | None, dict | None]:
-    """Resolve the robusta stock CSV (HHMMSS-stamped filename). Order:
-    (1) tier-1 — recorded publish times ± 2s (cheap, ≤~50 GETs);
-    (2) tier-2 — sequential 5s-throttled sweep of the publish window (skipped
-        when sweep=False). Sequential is mandatory here: ICE's /marketdata/ host
-        429s ANY concurrency (even 2 parallel GETs drew a 1-hour Retry-After=3600
-        penalty that wiped the whole run), so the only safe knob is the recorded
-        tier-1 hits accumulating over time. Returns (url, parsed) or (None, None).
+    """Resolve the robusta stock CSV, whose filename carries the publish SECOND.
+
+    Three tiers, each ruling out what the one before it settled. No second is
+    requested twice for a given date.
+
+      TIER 0   the second already recorded for THIS date, if any. One GET, and
+               a hit ends the search. Retention is confirmed (probe 0.18), so a
+               known day stays one GET forever — which is also what makes a
+               missed day recoverable the moment a human supplies its second.
+
+      TIER 1   the top-K most frequent seconds across the WHOLE hit log — every
+               date, not this one — each widened ±2s, so ≤~50 candidates, minus
+               anything tier 0 already settled. It is a guess drawn from other
+               days' history and has no relationship to tier 0 beyond skipping
+               it. It runs as a real fast path, ahead of the sweep.
+                 · On a date it has already walked and missed, it is not re-run
+                   — a fixed list re-asks a question already answered no.
+
+      TIER 2   sequential sweep of STOCK_REPORT_SWEEP_RANGE, ascending, one
+               request every _STOCK_SWEEP_INTERVAL_S, skipping tier 0's second
+               and every tier-1 time. Skipped when sweep=False. Coverage of the
+               window is unchanged: what tier 1 asked is not re-asked, and
+               nothing else is dropped.
+
+    Sequential is not a tuning choice. ICE's /marketdata/ host 429s ANY
+    concurrency — two parallel GETs once drew Retry-After=3600 and wiped the
+    run — so the per-request interval is the only knob, and the hit log
+    accumulating over time is the only thing that makes the search cheaper.
+
+    Returns (url, parsed), or (None, None) if the day was not found.
     """
     def _try(hhmmss: str) -> tuple[str | None, dict | None]:
         url = F.ROBUSTA_STOCK_REPORT_CSV.format(yyyymmdd=F.yyyymmdd(d), hhmmss=hhmmss)
@@ -1102,30 +1125,39 @@ def pull_stock_report(d: date, *, sweep: bool = True) -> tuple[str | None, dict 
             return url, parsed
         print(f"  ! recorded time {known} for {d} no longer resolves — re-searching")
 
-    # Tier 1 — the seconds learned from OTHER days, tried against this one.
-    # Two ways it was pure waste, both costing 50 GETs at 5s each:
+    # Reaching here means tier 0 ran and MISSED, so its second is now a settled
+    # no for this date and nothing below should ask it again. Tier 1 could
+    # (when the recorded second is also a popular one) and the sweep always did
+    # (whenever it falls inside the window) — measured at exactly one duplicate
+    # GET per such run. Small, but it is a request spent re-answering a question
+    # this same run already answered, which is the one kind of request that can
+    # never pay off.
+    ruled_out = {known} if known else set()
+
+    # Tier 1 — the seconds learned from OTHER days, tried against this one, as a
+    # real fast path ahead of the sweep.
     #
-    #   (a) On the SWEEP day it is redundant. The sweep walks every second in
-    #       the window, so any tier-1 time inside the window gets tried anyway,
-    #       just later. Only the times OUTSIDE the window add anything — and
-    #       those are the ones worth keeping, because the sweep can never reach
-    #       them (2026-08-25 published at 11:23:51, past the 11:00 edge).
+    # It used to be deferred: on a sweep day every tier-1 time inside the window
+    # was left out, on the grounds that the sweep reaches it anyway (#839). That
+    # is true about COVERAGE and wrong about LATENCY. The sweep walks ascending
+    # from 10:29:50, so a report published at 10:39:12 is the ~1,400th request;
+    # the same second sits in the top-10 list and would be found in under fifty.
+    # Deferring made every sweep day pay the full walk to reach a second it
+    # already suspected.
     #
-    #   (b) On a date it has already missed. Tier-1 is a fixed list, so asking
-    #       it twice about the same date re-asks a question already answered
-    #       no. 2026-08-31 was swept to exhaustion on 1 Sep and is still absent;
-    #       every run since has spent 50 more GETs re-confirming that.
-    tier1 = _stock_report_tier1_times()
-    if sweep:
-        in_window = set(_stock_report_sweep_times())
-        skipped = [t for t in tier1 if t in in_window]
-        tier1 = [t for t in tier1 if t not in in_window]
-        if skipped:
-            print(f"  → tier-1: {len(skipped)} time(s) left to the sweep, "
-                  f"{len(tier1)} outside the window tried first")
-    elif _tier1_already_tried(d):
+    # Trying it first is not a trade, because tier 2 now skips whatever tier 1
+    # asked: in the worst case the same requests happen in a different order, in
+    # the common case ~1,350 of them never happen at all.
+    #
+    # Still suppressed on a date it has already walked and missed — a fixed list
+    # re-asks a question already answered no. 2026-08-31 was swept to exhaustion
+    # on 1 Sep and is still absent; re-running the list only re-confirms that.
+    tier1 = [t for t in _stock_report_tier1_times() if t not in ruled_out]
+    if not sweep and _tier1_already_tried(d):
         print(f"  → tier-1 already missed for {d} — not re-asking ({len(tier1)} GETs saved)")
         tier1 = []
+    elif tier1:
+        print(f"  → tier-1: {len(tier1)} candidate second(s) tried before the sweep")
 
     for hhmmss in tier1:
         url, parsed = _try(hhmmss)
@@ -1142,7 +1174,9 @@ def pull_stock_report(d: date, *, sweep: bool = True) -> tuple[str | None, dict 
     # by temporarily overriding the marketdata throttle for the sweep and
     # restoring it after. _http_get keeps its 429 guard, so an over-fast
     # interval aborts cleanly rather than hammering.
-    tried = set(tier1)
+    # Everything already asked for this date: the tier-1 times tried above, plus
+    # tier 0's second. The sweep is the only place left that could repeat them.
+    tried = set(tier1) | ruled_out
     # Resume where a killed run left off. The walk is monotonic and the
     # knowledge is durable — a second already answered 404 will not start
     # answering 200 later — so re-walking it is pure repeated cost. Only

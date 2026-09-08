@@ -1506,53 +1506,117 @@ def _have_monthly(feed: str, key_field: str, month_key: str) -> bool:
     return any((r.get(key_field) or "")[:7] == month_key for r in rows)
 
 
-def _reconcile_iss_recv_derived(doc: dict) -> list[str]:
-    """Bring lots_sold_today / lots_bought_today back in line with the raw record.
+def _num(value):
+    """The value if it is a usable count, else None. `bool` is not a count."""
+    return value if isinstance(value, (int, float)) and not isinstance(value, bool) else None
 
-    Deliberately narrow, because this rewrites history that is already published:
 
-      * only the two fields derived from iss_recv_daily.grand_total;
-      * only for a date that HAS a stored raw record — an absent record means
-        "not fetched yet", never "zero", and must not force a value;
+def _activity_derived_totals(doc: dict) -> dict[str, dict]:
+    """{date: {snapshot_field: value}} implied by the stored raw records.
+
+    Mirrors exactly what _robusta_snapshot derives from the same three sources,
+    so a date present here is a date whose snapshot can be checked against its
+    own evidence. A date is offered ONLY when its raw record is usable: absent
+    or malformed means "not fetched yet", never "zero".
+    """
+    activity = doc.get("recent_activity") or {}
+    out: dict[str, dict] = {}
+
+    #   "lots_sold_today":   iss_total.get("sold", 0)
+    #   "lots_bought_today": iss_total.get("bought", 0)
+    for entry in activity.get("iss_recv_daily", []):
+        day, grand = entry.get("date"), entry.get("grand_total")
+        if not day or not isinstance(grand, dict):
+            continue
+        for field, key in (("lots_sold_today", "sold"),
+                           ("lots_bought_today", "bought")):
+            value = _num(grand.get(key))
+            if value is not None:
+                out.setdefault(day, {})[field] = value
+
+    #   lots_graded_today = sum(g["summary"]["lots_graded_today"] for g in gradings_today)
+    # A date can carry several panels (gradrc_*-1, -2, …), so this is a SUM and
+    # every panel has to be usable — one malformed panel would silently
+    # understate the day, which is the very failure being repaired.
+    graded: dict[str, int | float] = {}
+    for entry in activity.get("gradings", []):
+        day = entry.get("date")
+        if not day:
+            continue
+        value = _num((entry.get("summary") or {}).get("lots_graded_today"))
+        if value is None:
+            graded[day] = None                      # poison the date, not the sum
+        elif graded.get(day, 0) is not None:
+            graded[day] = graded.get(day, 0) + value
+    for day, value in graded.items():
+        if value is not None:
+            out.setdefault(day, {})["lots_graded_today"] = value
+
+    #   "tenders_today": tenders_total.get("originals", 0)
+    for entry in activity.get("tenders", []):
+        day, totals = entry.get("date"), entry.get("totals_today")
+        if not day or not isinstance(totals, dict):
+            continue
+        value = _num(totals.get("originals"))
+        if value is not None:
+            out.setdefault(day, {})["tenders_today"] = value
+
+    return out
+
+
+def _reconcile_activity_derived(doc: dict) -> list[str]:
+    """Bring the snapshot fields derived from recent_activity back in line with
+    the raw records those fields are derived FROM.
+
+    ICE publishes the per-day reports after the stock report, so a snapshot
+    built in the morning holds 0 for every one of them and nothing used to go
+    back once the report arrived. Measured against the committed file, four
+    fields were affected:
+
+        lots_sold_today     2026-08-27, 2026-09-01, 2026-09-03
+        lots_bought_today   2026-08-27, 2026-09-01, 2026-09-03
+        lots_graded_today   2026-06-17, 2026-06-29, 2026-09-01
+        tenders_today       2026-08-27
+
+    Deliberately narrow, because this rewrites history that is already
+    published:
+
+      * only fields derived from a stored raw record, never anything else;
+      * only for a date whose raw record is present and usable — absent or
+        malformed means "not fetched yet", never "zero", and must not force a
+        value;
       * only where the stored value actually disagrees;
       * only where the snapshot already carries the field, so the shape of a
         snapshot never changes and no downstream reader meets a new key;
-      * only between numbers, so a malformed record cannot put a string or a
-        null where a count belongs.
+      * only between numbers, so a malformed record cannot put a string, a null
+        or a bool where a count belongs.
 
     Returns the dates it corrected, for the caller to report.
     """
-    totals: dict[str, dict] = {}
-    for entry in (doc.get("recent_activity") or {}).get("iss_recv_daily", []):
-        day, grand = entry.get("date"), entry.get("grand_total")
-        if day and isinstance(grand, dict):
-            totals[day] = grand
+    totals = _activity_derived_totals(doc)
 
     corrected: list[str] = []
     for snap in doc.get("snapshots") or []:
-        grand = totals.get(snap.get("date"))
-        if not grand:
+        wanted = totals.get(snap.get("date"))
+        if not wanted:
             continue
         changed = False
-        for field, source in (("lots_sold_today", "sold"),
-                              ("lots_bought_today", "bought")):
+        for field, raw in wanted.items():
             if field not in snap:
                 continue
-            raw, held = grand.get(source), snap[field]
-            if not isinstance(raw, (int, float)) or isinstance(raw, bool):
+            held = _num(snap[field])
+            if held is None or raw == held:
                 continue
-            if not isinstance(held, (int, float)) or isinstance(held, bool):
-                continue
-            if raw != held:
-                snap[field] = raw
-                changed = True
+            snap[field] = raw
+            changed = True
         if changed:
             corrected.append(snap["date"])
 
     if corrected:
         shown = ", ".join(corrected[:5])
         more = f" (+{len(corrected) - 5} more)" if len(corrected) > 5 else ""
-        print(f"  → iss/recv reconciled against the raw record: {shown}{more}")
+        print(f"  → recent-activity fields reconciled against the raw records: "
+              f"{shown}{more}")
     return corrected
 
 
@@ -1584,21 +1648,22 @@ def _merge_robusta(new: dict, old: dict) -> dict:
             merged.values(), key=lambda e: e.get("date") or ""
         )
 
-    # The daily issuer/receiver report is published AFTER the stock report, so
-    # the run that builds a day's snapshot usually has no iss/recv figures for
-    # it yet and _robusta_snapshot writes 0. A later run does fetch the report
-    # into recent_activity.iss_recv_daily above — but nothing used to go back
-    # and correct the snapshot, so the zero stood permanently.
+    # The per-day reports are published AFTER the stock report, so the run that
+    # builds a day's snapshot usually has none of their figures yet and
+    # _robusta_snapshot writes 0. A later run does fetch them into
+    # recent_activity above — but nothing used to go back and correct the
+    # snapshot, so the zero stood permanently.
     #
     # Not theoretical: this file disagreed with its own raw records on
-    # 2026-08-27 (3,000 lots recorded, snapshot 0), 2026-09-01 and 2026-09-03
-    # (12 each, snapshot 0). Found by the 620 shadow comparison, which fetches
-    # the same days later in the day and therefore got them right.
+    # ten (date, field) pairs across five dates — iss/recv on 2026-08-27,
+    # 09-01 and 09-03; gradings on 2026-06-17, 06-29 and 09-01; tenders on
+    # 2026-08-27. Found by the 620 shadow comparison, which fetches the same
+    # days later in the day and therefore got them right.
     #
     # The raw record IS the definition of these two fields, and the merge above
     # is last-write-wins by date, so the stored record is never staler than the
     # snapshot that was derived from it. Reconciling here is the whole fix.
-    _reconcile_iss_recv_derived(new)
+    _reconcile_activity_derived(new)
 
     # monthly: union by month key.
     def _merge_monthly(key: str, k_field: str) -> list:

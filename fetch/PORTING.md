@@ -16,16 +16,57 @@ reproduced exactly so the relative imports (`from ... import run_degradations`,
 That is deliberate: while both repositories run this code in parallel, a diff
 between their outputs has to mean *the fetch differs*, not *the code differs*.
 
-**`orchestrate.py` is the only file that differs, in exactly four places** — two
-path anchors marked `PORTED TO 620`, and two pacing constants marked
-`PACING BASELINE`:
+**`orchestrate.py` is the only file that differs, in exactly two places**, both
+marked `PORTED TO 620`:
 
 | What | Upstream (619) | Here | Why |
 |---|---|---|---|
 | `OUT_DIR` | `frontend/public/data` | `_stage/`, via `ICE_STAGE_DIR` | 620 has no frontend. Output is staged, then filtered by `publish_ice.py`. |
 | `BLOCK_STATE_PATH` | repo-root `data/` | `fetch/state/` | Repo-root `data/` here is the published payload directory. |
-| `_THROTTLE` | `{"public": 2.0, "marketdata": 5.0}` | `{"public": 4.0, "marketdata": 8.0}` | 619's values are refused outright on the public runner pool. |
-| `_STOCK_SWEEP_INTERVAL_S` | `3.0` | `4.0` | Same reason. |
+
+Pacing and the sweep window are **no longer divergences**: 619 adopted the same
+4.0 / 4.0 / 8.0 baseline and the same second-level window, so those constants are
+identical in both repos. `tests/test_pacing_baseline.py` pins them anyway,
+because they are load-bearing and non-obvious.
+
+### Fetch parity with 619
+
+Everything on the fetch path is byte-identical apart from the two anchors above:
+all ten parsers, `fetch.py`, `spa_api.py`, `cohort_outflow.py`,
+`ice_arabica_groups.py`, `run_degradations.py`, and the whole of
+`orchestrate.py` including the tier logic, the sweep window, the 403/429
+breakers, section boundaries, retry ladder, headers and session handling.
+
+Verified 2026-09-08 after 619 moved to a second-level sweep window. 620 was
+still walking whole minutes — 1,920 candidates over 10:29:00–11:00:59 against
+619's 1,810 over 10:29:50–10:59:59 — which is exactly the kind of silent drift
+this note exists to catch. Re-verify whenever 619's ICE code changes; the diff
+is the audit.
+
+### Tier-1 publish-time hints
+
+619 learns publish seconds from its own captures and keeps the full
+date-to-second history in `stock_report_hits.json`. That is private timing
+intelligence and is not committed here.
+
+620 receives the **minimal** form at run time instead: the `ICE_TIER1_HINTS`
+repository secret carries the most frequent publish seconds with **no dates**,
+and a workflow step materialises them into the git-ignored hits file. That is
+enough for `_stock_report_tier1_times()`, which reads only `hhmmss`, and not
+enough to reconstruct when any particular report was published.
+
+Consequences, stated plainly:
+
+- **Tier 1 works** — the cheap fast path is available.
+- **Tier 0 does not.** `_recorded_time_for()` needs a date-to-second mapping and
+  gets `None`. Per-date hole recovery therefore does not run here. That is
+  acceptable because 620 fetches a three-day current window and 619 keeps doing
+  the backfills.
+- **Without the secret the fetch still works**, falling back to three bootstrap
+  guesses and then the full 1,810-candidate sweep. The secret buys ~121 minutes
+  of wall clock, not correctness.
+- The fetch workflow runs only on `schedule` and `workflow_dispatch`, never on
+  `pull_request`, so the secret is never exposed to a contributed branch.
 
 ### The pacing baseline is load-bearing
 

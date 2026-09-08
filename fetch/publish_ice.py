@@ -202,6 +202,9 @@ def update_catalog(entries: dict[str, dict]) -> None:
     A market that failed this run keeps its previous entry — the payload on disk
     is still the last good one.
     """
+    if not CATALOG.is_file():
+        raise SystemExit(f"[publish] {CATALOG} is missing — refusing to create one. "
+                         f"The catalogue is committed state, not a side effect.")
     catalog = json.loads(CATALOG.read_text())
     by_id = {d["id"]: d for d in catalog.get("datasets", [])}
 

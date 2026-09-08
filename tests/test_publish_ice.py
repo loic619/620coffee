@@ -116,6 +116,12 @@ def test_publishing_a_history_sized_payload_is_refused(tmp_path, monkeypatch):
     out.mkdir(parents=True)
     monkeypatch.setattr(publish_ice, "STAGE", stage)
     monkeypatch.setattr(publish_ice, "OUT", out)
+    # The real catalogue lives in the repository. A test that publishes must not
+    # write to it — an earlier version of this file did, and committed a
+    # catalogue entry for a payload that only ever existed in a tmpdir.
+    catalog = tmp_path / "catalog.json"
+    catalog.write_text('{"catalog_version": 1, "generated_at": "x", "datasets": []}')
+    monkeypatch.setattr(publish_ice, "CATALOG", catalog)
 
     history = {"as_of": "2026-09-04", "snapshots": [
         {"date": f"2026-0{1 + i // 28}-{1 + i % 28:02d}", "total_bags": i} for i in range(100)]}
@@ -139,6 +145,12 @@ def test_a_normal_window_publishes(tmp_path, monkeypatch):
     out.mkdir(parents=True)
     monkeypatch.setattr(publish_ice, "STAGE", stage)
     monkeypatch.setattr(publish_ice, "OUT", out)
+    # The real catalogue lives in the repository. A test that publishes must not
+    # write to it — an earlier version of this file did, and committed a
+    # catalogue entry for a payload that only ever existed in a tmpdir.
+    catalog = tmp_path / "catalog.json"
+    catalog.write_text('{"catalog_version": 1, "generated_at": "x", "datasets": []}')
+    monkeypatch.setattr(publish_ice, "CATALOG", catalog)
 
     window = {"as_of": "2026-09-04", "port_peaks": {"NY": 5}, "snapshots": [
         {"date": "2026-09-02", "total_bags": 1},
@@ -166,6 +178,12 @@ def test_an_empty_fetch_does_not_overwrite_a_good_payload(tmp_path, monkeypatch)
     out.mkdir(parents=True)
     monkeypatch.setattr(publish_ice, "STAGE", stage)
     monkeypatch.setattr(publish_ice, "OUT", out)
+    # The real catalogue lives in the repository. A test that publishes must not
+    # write to it — an earlier version of this file did, and committed a
+    # catalogue entry for a payload that only ever existed in a tmpdir.
+    catalog = tmp_path / "catalog.json"
+    catalog.write_text('{"catalog_version": 1, "generated_at": "x", "datasets": []}')
+    monkeypatch.setattr(publish_ice, "CATALOG", catalog)
 
     good = {"snapshots": [{"date": "2026-09-04", "total_bags": 3}]}
     (out / "certified_stocks_arabica_latest.json").write_text(json.dumps(good))

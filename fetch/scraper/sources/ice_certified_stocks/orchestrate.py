@@ -1941,10 +1941,34 @@ def run(days_back: int = 30, write: bool = True, merge: bool = True,
         _prev_fetched = set((_existing or {}).get("daily_fetched") or [])
         anchor_day = days_sorted_asc[-1]
         gap_days = [d for d in days_sorted_asc[:-1] if d.isoformat() not in _prev_fetched]
-        daily_days = gap_days + [anchor_day]
-        if gap_days:
-            print(f"[robusta] per-day sources: {anchor_day} + {len(gap_days)} never-fetched "
-                  f"gap day(s) ({', '.join(d.isoformat() for d in gap_days)})...")
+        # A day we captured a stock report for is a day we fetch the per-day
+        # sources for. _robusta_snapshot derives lots_sold_today,
+        # lots_bought_today, lots_graded_today and tenders_today from those
+        # sources, so a day with a snapshot and no per-day fetch arrives with all
+        # four at 0 and NO raw record to reconcile them from — the zero is then
+        # indistinguishable from a real one.
+        #
+        # The two horizons had drifted apart. Snapshots come from the stock
+        # report: the 5 most recent window days PLUS up to RECOVER_MAX recovered
+        # holes, which reach back as far as the hit log goes. The per-day sources
+        # covered only the window's never-fetched days and the anchor. Every
+        # recovered hole therefore landed as a snapshot outside the per-day
+        # horizon. Observed in 620 on 2026-09-09: snapshots for 2026-08-27 and
+        # 2026-08-28, both recovered holes, reading 0/0/0 and 0/0 where 619 —
+        # which had fetched those days when they were current — holds
+        # 3000/3000/3000 and 913/913.
+        #
+        # Cost is bounded by RECOVER_MAX, which already bounds the recovery
+        # itself, and scales with holes actually RECOVERED rather than attempted:
+        # robusta_stocks only holds days that parsed.
+        recovered_days = [d for d in robusta_stocks
+                          if d != anchor_day and d not in gap_days
+                          and d.isoformat() not in _prev_fetched]
+        daily_days = sorted(set(gap_days) | {anchor_day} | set(recovered_days))
+        extra = [d for d in daily_days if d != anchor_day]
+        if extra:
+            print(f"[robusta] per-day sources: {anchor_day} + {len(extra)} unfetched "
+                  f"day(s) with a stock report ({', '.join(d.isoformat() for d in extra)})...")
         else:
             print(f"[robusta] per-day sources: {anchor_day} only (no gaps in the window)...")
         for d in daily_days:

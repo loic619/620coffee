@@ -332,3 +332,103 @@ def test_telemetry_never_costs_the_run_its_data(tmp_path, monkeypatch, capsys):
     publish_ice._record_telemetry(orchestrate, {})          # must not raise
 
     assert "not recorded" in capsys.readouterr().out
+
+
+# ── raw coverage: a snapshot's derived fields must have their source records ──
+#
+# _robusta_snapshot derives lots_sold_today and lots_bought_today from
+# iss_recv_daily, lots_graded_today from gradings and tenders_today from tenders.
+# A snapshot published without those records carries four zeros that nothing can
+# tell apart from real ones — and 619's reconcile, which repairs exactly this,
+# has nothing to repair against.
+#
+# It happened on 2026-09-09. The stock report reaches further back than the
+# per-day sources did (5 recent days plus up to RECOVER_MAX recovered holes,
+# against the window's unfetched days plus the anchor), and 620 holds no local
+# history, so every hit-log date looked like a hole. The payload carried
+# snapshots for 2026-08-27 and 2026-08-28 reading 0/0/0 and 0/0 where 619 held
+# 3000/3000/3000 and 913/913. orchestrate.py now fetches the per-day sources for
+# every day it took a stock report for; this asserts the published result.
+
+DERIVED_FROM = {
+    "lots_sold_today": "iss_recv_daily",
+    "lots_bought_today": "iss_recv_daily",
+    "lots_graded_today": "gradings",
+    "tenders_today": "tenders",
+}
+
+
+def _uncovered(payload: dict) -> list[tuple[str, str]]:
+    """(date, family) pairs where a snapshot derives a field from a raw record
+    the payload does not carry for that date."""
+    activity = payload.get("recent_activity") or {}
+    have = {family: {r.get("date") for r in (activity.get(family) or [])
+                     if isinstance(r, dict)}
+            for family in set(DERIVED_FROM.values())}
+    fetched = set(payload.get("daily_fetched") or [])
+
+    missing = []
+    for snapshot in payload.get("snapshots") or []:
+        day = snapshot.get("date")
+        for field, family in DERIVED_FROM.items():
+            if field not in snapshot:
+                continue
+            # A day whose sources were requested and returned nothing is a real
+            # absence; a day never requested is the bug.
+            if day not in have[family] and day not in fetched:
+                missing.append((day, family))
+    return sorted(set(missing))
+
+
+def test_a_payload_with_full_raw_coverage_passes():
+    payload = {
+        "daily_fetched": ["2026-09-08"],
+        "snapshots": [{"date": "2026-09-08", "lots_sold_today": 12,
+                       "lots_bought_today": 12, "lots_graded_today": 48,
+                       "tenders_today": 0}],
+        "recent_activity": {
+            "iss_recv_daily": [{"date": "2026-09-08"}],
+            "gradings": [{"date": "2026-09-08"}],
+            "tenders": [{"date": "2026-09-08"}],
+        },
+    }
+    assert _uncovered(payload) == []
+
+
+def test_a_requested_day_that_published_nothing_is_not_a_breach():
+    """ICE genuinely publishes no tender file on a quiet day. The ledger says the
+    day was asked for, so the zero is an observation, not a gap."""
+    payload = {
+        "daily_fetched": ["2026-09-08"],
+        "snapshots": [{"date": "2026-09-08", "tenders_today": 0}],
+        "recent_activity": {"tenders": []},
+    }
+    assert _uncovered(payload) == []
+
+
+def test_the_2026_09_09_payload_shape_is_caught():
+    """The real defect, as data: snapshots for two recovered holes, per-day
+    sources fetched for the window only."""
+    payload = {
+        "daily_fetched": ["2026-09-04", "2026-09-07", "2026-09-08"],
+        "snapshots": [
+            {"date": "2026-08-27", "lots_sold_today": 0, "lots_bought_today": 0,
+             "tenders_today": 0},
+            {"date": "2026-08-28", "lots_sold_today": 0, "lots_bought_today": 0},
+            {"date": "2026-09-08", "lots_sold_today": 12, "lots_bought_today": 12},
+        ],
+        "recent_activity": {
+            "iss_recv_daily": [{"date": "2026-09-08"}],
+            "tenders": [{"date": "2026-09-08"}],
+        },
+    }
+    assert _uncovered(payload) == [
+        ("2026-08-27", "iss_recv_daily"), ("2026-08-27", "tenders"),
+        ("2026-08-28", "iss_recv_daily"),
+    ]
+
+
+# The same check against the real committed payload lands in a follow-up commit:
+# today's payload predates the fix and carries the six breaches this guard is
+# for, so asserting it here would ship a red test. It goes in once a fetch has
+# run with the corrected day selection.

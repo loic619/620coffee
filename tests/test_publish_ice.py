@@ -428,7 +428,31 @@ def test_the_2026_09_09_payload_shape_is_caught():
     ]
 
 
-# The same check against the real committed payload lands in a follow-up commit:
-# today's payload predates the fix and carries the six breaches this guard is
-# for, so asserting it here would ship a red test. It goes in once a fetch has
-# run with the corrected day selection.
+def test_the_published_robusta_payload_has_full_raw_coverage():
+    """Against the real committed payload — the guard that would have caught the
+    2026-09-09 gap before 619's shadow comparison did.
+
+    Held back until a fetch had run with the corrected day selection: the payload
+    this replaces carried six breaches, so asserting it earlier would have shipped
+    a red test. Run 34333234815 (published 09:36:03Z) is the first with full
+    coverage, and from that run 619 no longer fetches ICE itself — so this is now
+    the last check between an uncovered payload and derived zeros stored as
+    observations in 619's history.
+    """
+    path = ROOT / "data" / "ice" / "certified_stocks_robusta_latest.json"
+    if not path.is_file():
+        pytest.skip("no published robusta payload in the tree")
+    breaches = _uncovered(json.loads(path.read_text()))
+    assert breaches == [], (
+        f"{len(breaches)} snapshot/day pair(s) derive a field from a raw record "
+        f"the payload does not carry: {breaches}")
+
+
+def test_the_published_arabica_payload_has_full_raw_coverage():
+    """Arabica derives none of these fields, so this is a no-op today. It is here
+    so that a future arabica snapshot gaining one is covered by construction
+    rather than by remembering to add a test."""
+    path = ROOT / "data" / "ice" / "certified_stocks_arabica_latest.json"
+    if not path.is_file():
+        pytest.skip("no published arabica payload in the tree")
+    assert _uncovered(json.loads(path.read_text())) == []

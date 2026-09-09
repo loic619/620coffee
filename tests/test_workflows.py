@@ -81,17 +81,45 @@ def test_the_fetch_serialises_against_itself(fetch_job):
     assert doc["concurrency"]["cancel-in-progress"] is False
 
 
-def test_the_fetch_needs_no_secret(fetch_job):
-    """Tier 0 and tier 1 are served by the committed dated log, not by
-    repository configuration. Nothing here may depend on a secret."""
+# The ACQUISITION must need no secret — that is the property, not "the file
+# contains no secret". Tier 0 and tier 1 are served by the committed dated log,
+# and ICE_TIER1_HINTS was deleted precisely so that a fetch could never depend on
+# repository configuration.
+#
+# SYNC_619_TOKEN is allowed, and is the only exception. It belongs to the handoff
+# that runs AFTER the payload is committed, it cannot influence what is fetched
+# or published, and its absence is a documented no-op with a working fallback
+# (1.27's crons). Guarding it as a named exception rather than loosening the
+# regex keeps the original property enforced.
+HANDOFF_ONLY_SECRETS = {"SYNC_619_TOKEN"}
+
+
+def test_the_fetch_itself_needs_no_secret(fetch_job):
     text = (Path(__file__).resolve().parent.parent / FETCH).read_text()
     # Comments discuss the absence of secrets, and check_no_secrets.py is a
     # script name. A real reference is only ever `${{ ... secrets.NAME ... }}`.
     code = "\n".join(line for line in text.splitlines()
                      if not line.lstrip().startswith("#"))
-    found = re.findall(r"\$\{\{[^}]*\bsecrets\.[A-Za-z_][A-Za-z0-9_]*", code)
-    assert not found, f"the fetch workflow has grown a secret dependency: {found}"
+    found = {m.rsplit(".", 1)[-1]
+             for m in re.findall(r"\$\{\{[^}]*\bsecrets\.[A-Za-z_][A-Za-z0-9_]*", code)}
+    assert not (found - HANDOFF_ONLY_SECRETS), (
+        f"the fetch workflow has grown a secret dependency: {sorted(found)}")
     assert "ICE_TIER1_HINTS" not in code
+
+
+def test_no_fetch_or_publish_step_reads_a_secret(fetch_job):
+    """The exception above is confined to the handoff. If any step that fetches,
+    validates or publishes ever reads a secret, acquisition has become
+    configuration-dependent again and this fails."""
+    _, job = fetch_job
+    for step in job["steps"]:
+        name = step.get("name") or ""
+        if "Hand off" in name:
+            continue
+        # The real reference form only — `check_no_secrets.py` is a script name,
+        # which is the same trap the test above documents.
+        blob = f"{step.get('env') or ''}\n{step.get('run') or ''}"
+        assert not re.search(r"\$\{\{[^}]*\bsecrets\.", blob), name
 
 
 def test_the_fetch_never_runs_on_a_contributed_branch(fetch_job):
@@ -219,3 +247,58 @@ def test_the_poller_fails_rather_than_skips_on_missing_config(poll_job):
             f"step {step.get('name')!r} still carries a skip condition — the "
             f"job is meant to die at the gate, not step around it"
         )
+
+
+# ── the cross-repo handoff to 619 ────────────────────────────────────────────
+#
+# 620 is the sole ICE fetcher from 2026-09-09 and 619's own 1.07 is retired to
+# manual rollback, so nothing brings the window home unless this dispatch or
+# 1.27's crons do. The failure mode being guarded is the one that already
+# happened once in 619: a trigger that stops working and reports nothing.
+
+def _fetch_steps():
+    doc = _load(next(w for w in WORKFLOWS if w.name == "fetch-ice-certified-stocks.yml"))
+    return doc["jobs"][next(iter(doc["jobs"]))]["steps"]
+
+
+def _handoff():
+    return next(s for s in _fetch_steps() if "Hand off to 619" in (s.get("name") or ""))
+
+
+def test_the_handoff_targets_619s_filename_not_its_title():
+    run = _handoff()["run"]
+    assert "loic619/619coffee/actions/workflows/sync-from-620.yml/dispatches" in run, (
+        "the display title is what broke the trigger this replaced")
+
+
+def test_the_handoff_asserts_the_http_result():
+    run = _handoff()["run"]
+    assert '"204"' in run, "204 is the dispatch endpoint's only success"
+    assert "::error::" in run, "a dispatch that fails silently is the bug being fixed"
+    assert "$code" in run, "the failure message must name the HTTP code"
+
+
+def test_a_missing_token_warns_rather_than_failing():
+    """SYNC_619_TOKEN does not exist yet. 'Not configured' is a known state with a
+    working fallback, so it must not paint every run red — but it must say so."""
+    run = _handoff()["run"]
+    assert "::warning::" in run and "SYNC_619_TOKEN" in run
+
+
+def test_the_handoff_cannot_lose_the_payload():
+    """The fetch is the production work and it is pushed before this runs."""
+    assert _handoff().get("continue-on-error") is True
+
+
+def test_the_handoff_runs_after_the_commit():
+    """A dispatch that beat the push would send 1.27 to read a payload that is
+    not published — it fetches raw.githubusercontent, not this runner's disk."""
+    names = [s.get("name") or "" for s in _fetch_steps()]
+    assert names.index("Hand off to 619 (sync-from-620)") > names.index("Commit the payload")
+
+
+def test_the_handoff_uses_a_cross_repo_token_not_github_token():
+    """GITHUB_TOKEN is scoped to this repository and cannot dispatch in 619."""
+    env = _handoff().get("env") or {}
+    assert "SYNC_619_TOKEN" in str(env)
+    assert "GITHUB_TOKEN" not in str(env)

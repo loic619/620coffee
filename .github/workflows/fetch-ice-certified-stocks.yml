@@ -120,3 +120,55 @@ jobs:
           done
           echo "::error::could not push the ICE window"
           exit 1
+
+      # Hand off to 619's consumer. 620 is the sole ICE fetcher from
+      # 2026-09-09; 619's own 1.07 is retired to manual rollback, so nothing
+      # brings the window home unless this dispatch or 1.27's cron does.
+      #
+      # Placed after the commit, so a dispatch only ever describes a payload that
+      # is already published — 1.27 reads raw.githubusercontent, not this
+      # runner's disk.
+      #
+      # Targets the FILENAME (sync-from-620.yml), which is stable across the
+      # renumbering that breaks display titles.
+      #
+      # NEEDS A CROSS-REPO TOKEN. GITHUB_TOKEN is scoped to this repository and
+      # cannot dispatch a workflow in 619, so this reads SYNC_619_TOKEN: a
+      # fine-grained PAT with Actions: read and write on loic619/619coffee only.
+      # Until that secret exists the step says so and skips — a WARNING, not an
+      # error, because "not configured yet" is a known state and 1.27's two daily
+      # crons carry the cycle meanwhile. Once configured, a dispatch that fails
+      # is an ERROR with the HTTP code and body, because then it is a real break.
+      #
+      # continue-on-error: the fetch is the production work and it is already
+      # pushed. A dead consumer must not lose the day's payload.
+      - name: Hand off to 619 (sync-from-620)
+        id: handoff
+        continue-on-error: true
+        env:
+          SYNC_619_TOKEN: ${{ secrets.SYNC_619_TOKEN }}
+        run: |
+          if [ -z "$SYNC_619_TOKEN" ]; then
+            echo "::warning::SYNC_619_TOKEN is not set — cannot dispatch 619's 1.27."
+            echo "The payload is published; 1.27's 03:40 and 09:40 crons will pick it up."
+            echo "To enable the handoff: create a fine-grained PAT with Actions"
+            echo "read+write on loic619/619coffee and add it here as SYNC_619_TOKEN."
+            exit 0
+          fi
+          code=$(curl -s -o /tmp/dispatch.out -w '%{http_code}' --max-time 30 -X POST \
+            -H "Authorization: Bearer $SYNC_619_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Content-Type: application/json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/loic619/619coffee/actions/workflows/sync-from-620.yml/dispatches" \
+            -d '{"ref":"main"}')
+          # 204 No Content is the endpoint's only success. 401/403 (token expired
+          # or wrong scope), 404 (renamed file, or a token that cannot see the
+          # repo) and 422 (bad ref) are all silent no-ops unless asserted.
+          if [ "$code" = "204" ]; then
+            echo "Dispatched 619 sync-from-620.yml on main."
+            exit 0
+          fi
+          echo "::error::Handoff to 619 failed — HTTP $code: $(cat /tmp/dispatch.out)"
+          echo "The payload is published and safe. 1.27's crons remain the fallback."
+          exit 1

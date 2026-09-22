@@ -1,25 +1,12 @@
 {
- "as_of": "2026-09-18",
+ "as_of": "2026-09-21",
  "daily_fetched": [
-  "2026-06-10",
-  "2026-06-17",
-  "2026-06-29",
-  "2026-07-28",
-  "2026-07-29",
-  "2026-07-30",
-  "2026-07-31",
-  "2026-08-03",
-  "2026-08-04",
-  "2026-08-05",
-  "2026-08-06",
-  "2026-08-07",
-  "2026-08-10",
-  "2026-08-11",
-  "2026-08-12",
-  "2026-08-13",
-  "2026-08-14",
-  "2026-08-17",
-  "2026-08-18",
+  "2026-06-03",
+  "2026-06-04",
+  "2026-06-05",
+  "2026-06-08",
+  "2026-06-09",
+  "2026-06-11",
   "2026-08-19",
   "2026-08-20",
   "2026-08-21",
@@ -28,38 +15,32 @@
   "2026-08-26",
   "2026-08-27",
   "2026-08-28",
-  "2026-08-31",
   "2026-09-01",
-  "2026-09-02",
   "2026-09-03",
   "2026-09-04",
   "2026-09-07",
   "2026-09-08",
   "2026-09-09",
-  "2026-09-10",
-  "2026-09-11",
-  "2026-09-14",
-  "2026-09-15",
-  "2026-09-16",
   "2026-09-17",
-  "2026-09-18"
+  "2026-09-18",
+  "2026-09-21"
  ],
- "generated_at": "2026-09-20T08:02:25+00:00",
+ "generated_at": "2026-09-22T06:30:29+00:00",
  "latest_detail": {
   "stock_report": {
-   "cut_off_date": "2026-09-17",
+   "cut_off_date": "2026-09-20",
    "grand_total": {
-    "non_tend": 1,
+    "non_tend": 6,
     "suspended": 0,
-    "with_val_cert": 4990
+    "with_val_cert": 5033
    },
    "ports": [
     {
-     "non_tend": 1,
+     "non_tend": 6,
      "port_id": "ANT",
      "port_name": "Antwerp",
      "suspended": 0,
-     "with_val_cert": 3461
+     "with_val_cert": 3504
     },
     {
      "non_tend": 0,
@@ -140,7 +121,7 @@
     }
    ]
   },
-  "stock_report_url": "https://www.ice.com/marketdata/publicdocs/liffe/coffee/stock_reports/Stock_Report_RC_20260918_103141.csv"
+  "stock_report_url": "https://www.ice.com/marketdata/publicdocs/liffe/coffee/stock_reports/Stock_Report_RC_20260921_103044.csv"
  },
  "monthly": {
   "age_allowance": [],
@@ -150,538 +131,407 @@
   "grading_appeals": [],
   "grading_overview": [
    {
-    "date": "2026-07-29",
-    "forecast_lots": 50,
+    "date": "2026-09-09",
+    "forecast_lots": 70,
     "queue_lots": 0,
-    "report_date": "2026-07-29",
-    "total_pending_lots": 50
+    "report_date": "2026-09-09",
+    "total_pending_lots": 70
+   },
+   {
+    "date": "2026-09-17",
+    "forecast_lots": 60,
+    "queue_lots": 0,
+    "report_date": "2026-09-17",
+    "total_pending_lots": 60
+   },
+   {
+    "date": "2026-09-18",
+    "forecast_lots": 60,
+    "queue_lots": 0,
+    "report_date": "2026-09-18",
+    "total_pending_lots": 60
+   },
+   {
+    "date": "2026-09-21",
+    "forecast_lots": 150,
+    "queue_lots": 0,
+    "report_date": "2026-09-21",
+    "total_pending_lots": 150
    }
   ],
-  "gradings": [],
+  "gradings": [
+   {
+    "date": "2026-09-18",
+    "entries": [
+     {
+      "allowance_cts_lb": null,
+      "class": null,
+      "lots": 5,
+      "origin": "Vietnam",
+      "port": "ANT",
+      "section": "CONTINENTAL LOTS",
+      "tenderable": false
+     },
+     {
+      "allowance_cts_lb": -30.0,
+      "class": 2,
+      "lots": 55,
+      "origin": "Vietnam",
+      "port": "ANT",
+      "section": "CONTINENTAL LOTS",
+      "tenderable": true
+     }
+    ],
+    "panel_date": "2026-09-18",
+    "panel_time": "08:00",
+    "report_date": "2026-09-18",
+    "report_time": "17:00",
+    "summary": {
+     "lots_graded_month": 249,
+     "lots_graded_today": 60,
+     "non_tenderable_month": 5,
+     "non_tenderable_today": 5,
+     "tenderable_month": 244,
+     "tenderable_today": 55
+    },
+    "url": "https://www.ice.com/marketdata/publicdocs/liffe/coffee/gradings/gradrc_260918-1.txt"
+   },
+   {
+    "date": "2026-09-21",
+    "entries": [
+     {
+      "allowance_cts_lb": null,
+      "class": null,
+      "lots": 5,
+      "origin": "Indonesia",
+      "port": "ANT",
+      "section": "CONTINENTAL LOTS",
+      "tenderable": false
+     },
+     {
+      "allowance_cts_lb": 0.0,
+      "class": 1,
+      "lots": 59,
+      "origin": "Indonesia",
+      "port": "ANT",
+      "section": "CONTINENTAL LOTS",
+      "tenderable": true
+     },
+     {
+      "allowance_cts_lb": -30.0,
+      "class": 2,
+      "lots": 8,
+      "origin": "Indonesia",
+      "port": "ANT",
+      "section": "CONTINENTAL LOTS",
+      "tenderable": true
+     },
+     {
+      "allowance_cts_lb": 0.0,
+      "class": 1,
+      "lots": 11,
+      "origin": "Vietnam",
+      "port": "ANT",
+      "section": "CONTINENTAL LOTS",
+      "tenderable": true
+     },
+     {
+      "allowance_cts_lb": -30.0,
+      "class": 2,
+      "lots": 19,
+      "origin": "Vietnam",
+      "port": "ANT",
+      "section": "CONTINENTAL LOTS",
+      "tenderable": true
+     }
+    ],
+    "panel_date": "2026-09-21",
+    "panel_time": "08:00",
+    "report_date": "2026-09-21",
+    "report_time": "17:04",
+    "summary": {
+     "lots_graded_month": 351,
+     "lots_graded_today": 102,
+     "non_tenderable_month": 10,
+     "non_tenderable_today": 5,
+     "tenderable_month": 341,
+     "tenderable_today": 97
+    },
+    "url": "https://www.ice.com/marketdata/publicdocs/liffe/coffee/gradings/gradrc_260921-1.txt"
+   }
+  ],
   "infested_warrants": [],
-  "iss_recv_daily": [],
-  "tenders": []
+  "iss_recv_daily": [
+   {
+    "date": "2026-09-09",
+    "delivery_date": "2026-09-09",
+    "grand_total": {
+     "bought": 0,
+     "sold": 0
+    },
+    "members": [],
+    "report_date": "2026-09-09"
+   },
+   {
+    "date": "2026-09-17",
+    "delivery_date": "2026-09-17",
+    "grand_total": {
+     "bought": 0,
+     "sold": 0
+    },
+    "members": [],
+    "report_date": "2026-09-17"
+   },
+   {
+    "date": "2026-09-18",
+    "delivery_date": "2026-09-18",
+    "grand_total": {
+     "bought": 0,
+     "sold": 0
+    },
+    "members": [],
+    "report_date": "2026-09-18"
+   },
+   {
+    "date": "2026-09-21",
+    "delivery_date": "2026-09-21",
+    "grand_total": {
+     "bought": 0,
+     "sold": 0
+    },
+    "members": [],
+    "report_date": "2026-09-21"
+   }
+  ],
+  "tenders": [
+   {
+    "business_date": "2026-09-09",
+    "by_origin": [
+     {
+      "origin": "Brazilian Conillon",
+      "originals_month": 1822,
+      "originals_today": 0,
+      "retenders_month": 922,
+      "retenders_today": 0
+     },
+     {
+      "origin": "Indonesia",
+      "originals_month": 1178,
+      "originals_today": 0,
+      "retenders_month": 15,
+      "retenders_today": 0
+     }
+    ],
+    "date": "2026-09-09",
+    "delivery_period": "2026-09",
+    "grand_totals": {
+     "original_substitutions": 0,
+     "original_substitutions_month": 0,
+     "originals": 0,
+     "originals_month": 3000,
+     "originals_rejected": 0,
+     "originals_rejected_month": 0,
+     "originals_substituted": 0,
+     "originals_substituted_month": 0,
+     "originals_withdrawn": 0,
+     "originals_withdrawn_month": 0,
+     "retender_substitutions": 0,
+     "retender_substitutions_month": 0,
+     "retenders": 0,
+     "retenders_month": 937,
+     "retenders_rejected": 0,
+     "retenders_rejected_month": 0,
+     "retenders_substituted": 0,
+     "retenders_substituted_month": 0,
+     "retenders_withdrawn": 0,
+     "retenders_withdrawn_month": 0
+    },
+    "report_date": "2026-09-09",
+    "totals_today": {
+     "originals": 0,
+     "originals_month": 3000,
+     "retenders": 0,
+     "retenders_month": 937
+    }
+   },
+   {
+    "business_date": "2026-09-17",
+    "by_origin": [
+     {
+      "origin": "Brazilian Conillon",
+      "originals_month": 1956,
+      "originals_today": 0,
+      "retenders_month": 922,
+      "retenders_today": 0
+     },
+     {
+      "origin": "Indonesia",
+      "originals_month": 1178,
+      "originals_today": 0,
+      "retenders_month": 15,
+      "retenders_today": 0
+     }
+    ],
+    "date": "2026-09-17",
+    "delivery_period": "2026-09",
+    "grand_totals": {
+     "original_substitutions": 0,
+     "original_substitutions_month": 0,
+     "originals": 0,
+     "originals_month": 3134,
+     "originals_rejected": 0,
+     "originals_rejected_month": 0,
+     "originals_substituted": 0,
+     "originals_substituted_month": 0,
+     "originals_withdrawn": 0,
+     "originals_withdrawn_month": 0,
+     "retender_substitutions": 0,
+     "retender_substitutions_month": 0,
+     "retenders": 0,
+     "retenders_month": 937,
+     "retenders_rejected": 0,
+     "retenders_rejected_month": 0,
+     "retenders_substituted": 0,
+     "retenders_substituted_month": 0,
+     "retenders_withdrawn": 0,
+     "retenders_withdrawn_month": 0
+    },
+    "report_date": "2026-09-17",
+    "totals_today": {
+     "originals": 0,
+     "originals_month": 3134,
+     "retenders": 0,
+     "retenders_month": 937
+    }
+   },
+   {
+    "business_date": "2026-09-18",
+    "by_origin": [
+     {
+      "origin": "Brazilian Conillon",
+      "originals_month": 1956,
+      "originals_today": 0,
+      "retenders_month": 922,
+      "retenders_today": 0
+     },
+     {
+      "origin": "Indonesia",
+      "originals_month": 1178,
+      "originals_today": 0,
+      "retenders_month": 15,
+      "retenders_today": 0
+     }
+    ],
+    "date": "2026-09-18",
+    "delivery_period": "2026-09",
+    "grand_totals": {
+     "original_substitutions": 0,
+     "original_substitutions_month": 0,
+     "originals": 0,
+     "originals_month": 3134,
+     "originals_rejected": 0,
+     "originals_rejected_month": 0,
+     "originals_substituted": 0,
+     "originals_substituted_month": 0,
+     "originals_withdrawn": 0,
+     "originals_withdrawn_month": 0,
+     "retender_substitutions": 0,
+     "retender_substitutions_month": 0,
+     "retenders": 0,
+     "retenders_month": 937,
+     "retenders_rejected": 0,
+     "retenders_rejected_month": 0,
+     "retenders_substituted": 0,
+     "retenders_substituted_month": 0,
+     "retenders_withdrawn": 0,
+     "retenders_withdrawn_month": 0
+    },
+    "report_date": "2026-09-18",
+    "totals_today": {
+     "originals": 0,
+     "originals_month": 3134,
+     "retenders": 0,
+     "retenders_month": 937
+    }
+   },
+   {
+    "business_date": "2026-09-21",
+    "by_origin": [
+     {
+      "origin": "Brazilian Conillon",
+      "originals_month": 1956,
+      "originals_today": 0,
+      "retenders_month": 922,
+      "retenders_today": 0
+     },
+     {
+      "origin": "Indonesia",
+      "originals_month": 1178,
+      "originals_today": 0,
+      "retenders_month": 15,
+      "retenders_today": 0
+     }
+    ],
+    "date": "2026-09-21",
+    "delivery_period": "2026-09",
+    "grand_totals": {
+     "original_substitutions": 0,
+     "original_substitutions_month": 0,
+     "originals": 0,
+     "originals_month": 3134,
+     "originals_rejected": 0,
+     "originals_rejected_month": 0,
+     "originals_substituted": 0,
+     "originals_substituted_month": 0,
+     "originals_withdrawn": 0,
+     "originals_withdrawn_month": 0,
+     "retender_substitutions": 0,
+     "retender_substitutions_month": 0,
+     "retenders": 0,
+     "retenders_month": 937,
+     "retenders_rejected": 0,
+     "retenders_rejected_month": 0,
+     "retenders_substituted": 0,
+     "retenders_substituted_month": 0,
+     "retenders_withdrawn": 0,
+     "retenders_withdrawn_month": 0
+    },
+    "report_date": "2026-09-21",
+    "totals_today": {
+     "originals": 0,
+     "originals_month": 3134,
+     "retenders": 0,
+     "retenders_month": 937
+    }
+   }
+  ]
  },
  "snapshots": [
   {
    "by_port_lots": {
     "AMS": 0,
-    "ANT": 2653,
-    "BAR": 5,
-    "BRE": 0,
-    "FEL": 19,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1462,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 0
-   },
-   "cut_off_date": "2026-07-27",
-   "date": "2026-07-28",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 2,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 689833,
-   "total_lots_certified": 4139
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 2650,
-    "BAR": 5,
-    "BRE": 0,
-    "FEL": 19,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1462,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 0
-   },
-   "cut_off_date": "2026-07-28",
-   "date": "2026-07-29",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 2,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 689333,
-   "total_lots_certified": 4136
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 2649,
-    "BAR": 3,
-    "BRE": 0,
-    "FEL": 19,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1462,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 0
-   },
-   "cut_off_date": "2026-07-29",
-   "date": "2026-07-30",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 2,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 688833,
-   "total_lots_certified": 4133
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 2695,
-    "BAR": 2,
-    "BRE": 0,
-    "FEL": 19,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1432,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 0
-   },
-   "cut_off_date": "2026-07-30",
-   "date": "2026-07-31",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 2,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 691333,
-   "total_lots_certified": 4148
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 2760,
-    "BAR": 2,
-    "BRE": 0,
-    "FEL": 19,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1432,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 0
-   },
-   "cut_off_date": "2026-08-02",
-   "date": "2026-08-03",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 2,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 702167,
-   "total_lots_certified": 4213
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 2754,
-    "BAR": 2,
-    "BRE": 0,
-    "FEL": 19,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1432,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 0
-   },
-   "cut_off_date": "2026-08-03",
-   "date": "2026-08-04",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 2,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 701167,
-   "total_lots_certified": 4207
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 2753,
-    "BAR": 2,
-    "BRE": 0,
-    "FEL": 19,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1432,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 0
-   },
-   "cut_off_date": "2026-08-04",
-   "date": "2026-08-05",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 2,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 701000,
-   "total_lots_certified": 4206
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 2753,
-    "BAR": 2,
-    "BRE": 0,
-    "FEL": 19,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1432,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 0
-   },
-   "cut_off_date": "2026-08-05",
-   "date": "2026-08-06",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 2,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 701000,
-   "total_lots_certified": 4206
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 2808,
-    "BAR": 2,
-    "BRE": 0,
-    "FEL": 19,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1432,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 0
-   },
-   "cut_off_date": "2026-08-06",
-   "date": "2026-08-07",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 2,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 710167,
-   "total_lots_certified": 4261
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 2832,
-    "BAR": 2,
-    "BRE": 0,
-    "FEL": 19,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1432,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 0
-   },
-   "cut_off_date": "2026-08-09",
-   "date": "2026-08-10",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 2,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 714167,
-   "total_lots_certified": 4285
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 2907,
-    "BAR": 2,
-    "BRE": 0,
-    "FEL": 19,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1424,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 0
-   },
-   "cut_off_date": "2026-08-10",
-   "date": "2026-08-11",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 2,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 725333,
-   "total_lots_certified": 4352
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 2932,
-    "BAR": 2,
-    "BRE": 0,
-    "FEL": 6,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1424,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 0
-   },
-   "cut_off_date": "2026-08-11",
-   "date": "2026-08-12",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 2,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 727333,
-   "total_lots_certified": 4364
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 3082,
-    "BAR": 2,
-    "BRE": 0,
-    "FEL": 6,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1424,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 0
-   },
-   "cut_off_date": "2026-08-12",
-   "date": "2026-08-13",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 2,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 752333,
-   "total_lots_certified": 4514
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 3106,
-    "BAR": 1,
-    "BRE": 0,
-    "FEL": 6,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1424,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 0
-   },
-   "cut_off_date": "2026-08-13",
-   "date": "2026-08-14",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 2,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 756167,
-   "total_lots_certified": 4537
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 3075,
-    "BAR": 1,
-    "BRE": 0,
-    "FEL": 6,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1424,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 0
-   },
-   "cut_off_date": "2026-08-16",
-   "date": "2026-08-17",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 2,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 751000,
-   "total_lots_certified": 4506
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 3167,
-    "BAR": 1,
-    "BRE": 0,
-    "FEL": 6,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1424,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 24
-   },
-   "cut_off_date": "2026-08-17",
-   "date": "2026-08-18",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 2,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 770333,
-   "total_lots_certified": 4622
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 3507,
+    "ANT": 3529,
     "BAR": 0,
     "BRE": 0,
     "FEL": 0,
     "HAM": 0,
     "LEH": 0,
     "LIV": 0,
-    "LON": 1441,
+    "LON": 1371,
     "NOR": 0,
     "ROT": 0,
     "TRI": 24
    },
-   "cut_off_date": "2026-09-10",
-   "date": "2026-09-11",
+   "cut_off_date": "2026-09-08",
+   "date": "2026-09-09",
    "lots_bought_today": 0,
    "lots_graded_today": 0,
    "lots_sold_today": 0,
    "non_tend_lots": 1,
    "suspended_lots": 0,
    "tenders_today": 0,
-   "total_bags_60kg_equivalent": 828667,
-   "total_lots_certified": 4972
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 3514,
-    "BAR": 0,
-    "BRE": 0,
-    "FEL": 0,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1505,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 24
-   },
-   "cut_off_date": "2026-09-13",
-   "date": "2026-09-14",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 1,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 840500,
-   "total_lots_certified": 5043
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 3514,
-    "BAR": 0,
-    "BRE": 0,
-    "FEL": 0,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1505,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 24
-   },
-   "cut_off_date": "2026-09-14",
-   "date": "2026-09-15",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 1,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 840500,
-   "total_lots_certified": 5043
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 3509,
-    "BAR": 0,
-    "BRE": 0,
-    "FEL": 0,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1505,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 24
-   },
-   "cut_off_date": "2026-09-15",
-   "date": "2026-09-16",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 1,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 839667,
-   "total_lots_certified": 5038
+   "total_bags_60kg_equivalent": 820667,
+   "total_lots_certified": 4924
   },
   {
    "by_port_lots": {
@@ -727,13 +577,39 @@
    "cut_off_date": "2026-09-17",
    "date": "2026-09-18",
    "lots_bought_today": 0,
-   "lots_graded_today": 0,
+   "lots_graded_today": 60,
    "lots_sold_today": 0,
    "non_tend_lots": 1,
    "suspended_lots": 0,
    "tenders_today": 0,
    "total_bags_60kg_equivalent": 831667,
    "total_lots_certified": 4990
+  },
+  {
+   "by_port_lots": {
+    "AMS": 0,
+    "ANT": 3504,
+    "BAR": 0,
+    "BRE": 0,
+    "FEL": 0,
+    "HAM": 0,
+    "LEH": 0,
+    "LIV": 0,
+    "LON": 1505,
+    "NOR": 0,
+    "ROT": 0,
+    "TRI": 24
+   },
+   "cut_off_date": "2026-09-20",
+   "date": "2026-09-21",
+   "lots_bought_today": 0,
+   "lots_graded_today": 102,
+   "lots_sold_today": 0,
+   "non_tend_lots": 6,
+   "suspended_lots": 0,
+   "tenders_today": 0,
+   "total_bags_60kg_equivalent": 838833,
+   "total_lots_certified": 5033
   }
  ]
 }

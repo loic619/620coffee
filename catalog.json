@@ -1,6 +1,6 @@
 {
   "catalog_version": 1,
-  "generated_at": "2026-09-30T07:26:02Z",
+  "generated_at": "2026-10-01T08:11:15Z",
   "datasets": [
     {
       "id": "ice.certified_stocks_arabica_latest",
@@ -9,13 +9,13 @@
       "source": "ice",
       "path": "data/ice/certified_stocks_arabica_latest.json",
       "format": "json",
-      "bytes": 47780,
-      "sha256": "21f6e050e9926302d0eec9902fce79d64f852865831fd342a9d01bf6453471a3",
-      "updated_at": "2026-09-30T07:26:02Z",
+      "bytes": 48323,
+      "sha256": "65e158cf5ab57f06ba8d3b0cfff527827c2d49054f7c4523549c4f7a198f984d",
+      "updated_at": "2026-10-01T08:11:15Z",
       "cadence": "daily",
       "coverage": {
-        "start": "2026-09-25",
-        "end": "2026-09-29"
+        "start": "2026-09-28",
+        "end": "2026-09-30"
       },
       "upstream": "https://www.ice.com/"
     },
@@ -26,13 +26,13 @@
       "source": "ice",
       "path": "data/ice/certified_stocks_robusta_latest.json",
       "format": "json",
-      "bytes": 4078,
-      "sha256": "cb97dea5559399f6d8e1ded5aa71603e518ad673ab244f634872d3fd7310bba7",
-      "updated_at": "2026-09-30T07:26:02Z",
+      "bytes": 4606,
+      "sha256": "6d42e020e9d92564af4390aeccd191da92bc7765087010cfe42bbcf45fe40099",
+      "updated_at": "2026-10-01T08:11:15Z",
       "cadence": "daily",
       "coverage": {
-        "start": "2026-09-25",
-        "end": "2026-09-29"
+        "start": "2026-09-28",
+        "end": "2026-09-30"
       },
       "upstream": "https://www.ice.com/"
     }

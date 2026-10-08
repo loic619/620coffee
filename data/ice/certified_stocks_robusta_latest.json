@@ -1,38 +1,38 @@
 {
- "as_of": "2026-10-06",
+ "as_of": "2026-10-07",
  "daily_fetched": [
-  "2026-06-26",
-  "2026-06-30",
-  "2026-07-01",
-  "2026-07-02",
-  "2026-07-03",
-  "2026-07-06",
-  "2026-07-07",
-  "2026-07-08",
-  "2026-07-09",
-  "2026-07-10",
-  "2026-07-13",
-  "2026-07-14",
-  "2026-07-15",
-  "2026-07-16",
-  "2026-07-17",
-  "2026-07-20",
-  "2026-09-10",
-  "2026-09-18",
-  "2026-09-21",
-  "2026-09-23",
-  "2026-10-02",
+  "2026-07-21",
+  "2026-07-22",
+  "2026-07-23",
+  "2026-07-24",
+  "2026-07-27",
+  "2026-07-28",
+  "2026-07-29",
+  "2026-07-30",
+  "2026-07-31",
+  "2026-08-03",
+  "2026-08-04",
+  "2026-08-05",
+  "2026-08-06",
+  "2026-08-07",
+  "2026-08-10",
+  "2026-08-11",
+  "2026-08-12",
+  "2026-08-13",
+  "2026-09-11",
+  "2026-09-24",
   "2026-10-05",
-  "2026-10-06"
+  "2026-10-06",
+  "2026-10-07"
  ],
- "generated_at": "2026-10-07T07:37:18+00:00",
+ "generated_at": "2026-10-08T07:50:24+00:00",
  "latest_detail": {
   "stock_report": {
-   "cut_off_date": "2026-10-05",
+   "cut_off_date": "2026-10-06",
    "grand_total": {
     "non_tend": 17,
     "suspended": 0,
-    "with_val_cert": 5195
+    "with_val_cert": 5194
    },
    "ports": [
     {
@@ -40,7 +40,7 @@
      "port_id": "ANT",
      "port_name": "Antwerp",
      "suspended": 0,
-     "with_val_cert": 3489
+     "with_val_cert": 3488
     },
     {
      "non_tend": 0,
@@ -121,7 +121,7 @@
     }
    ]
   },
-  "stock_report_url": "https://www.ice.com/marketdata/publicdocs/liffe/coffee/stock_reports/Stock_Report_RC_20261006_103910.csv"
+  "stock_report_url": "https://www.ice.com/marketdata/publicdocs/liffe/coffee/stock_reports/Stock_Report_RC_20261007_103115.csv"
  },
  "monthly": {
   "age_allowance": [
@@ -1482,84 +1482,13 @@
  },
  "recent_activity": {
   "grading_appeals": [],
-  "grading_overview": [
-   {
-    "date": "2026-10-02",
-    "forecast_lots": 0,
-    "queue_lots": 0,
-    "report_date": "2026-10-02",
-    "total_pending_lots": 0
-   }
-  ],
-  "gradings": [
-   {
-    "date": "2026-10-02",
-    "entries": [
-     {
-      "allowance_cts_lb": null,
-      "class": null,
-      "lots": 6,
-      "origin": "Vietnam",
-      "port": "ANT",
-      "section": "CONTINENTAL LOTS",
-      "tenderable": false
-     },
-     {
-      "allowance_cts_lb": -30.0,
-      "class": 2,
-      "lots": 54,
-      "origin": "Vietnam",
-      "port": "ANT",
-      "section": "CONTINENTAL LOTS",
-      "tenderable": true
-     }
-    ],
-    "panel_date": "2026-10-02",
-    "panel_time": "08:00",
-    "report_date": "2026-10-02",
-    "report_time": "17:00",
-    "summary": {
-     "lots_graded_month": 60,
-     "lots_graded_today": 60,
-     "non_tenderable_month": 6,
-     "non_tenderable_today": 6,
-     "tenderable_month": 54,
-     "tenderable_today": 54
-    },
-    "url": "https://www.ice.com/marketdata/publicdocs/liffe/coffee/gradings/gradrc_261002-1.txt"
-   }
-  ],
+  "grading_overview": [],
+  "gradings": [],
   "infested_warrants": [],
   "iss_recv_daily": [],
   "tenders": []
  },
  "snapshots": [
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 3455,
-    "BAR": 0,
-    "BRE": 0,
-    "FEL": 0,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1696,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 10
-   },
-   "cut_off_date": "2026-10-01",
-   "date": "2026-10-02",
-   "lots_bought_today": 0,
-   "lots_graded_today": 60,
-   "lots_sold_today": 0,
-   "non_tend_lots": 11,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 860167,
-   "total_lots_certified": 5161
-  },
   {
    "by_port_lots": {
     "AMS": 0,
@@ -1611,6 +1540,32 @@
    "tenders_today": 0,
    "total_bags_60kg_equivalent": 865833,
    "total_lots_certified": 5195
+  },
+  {
+   "by_port_lots": {
+    "AMS": 0,
+    "ANT": 3488,
+    "BAR": 0,
+    "BRE": 0,
+    "FEL": 0,
+    "HAM": 0,
+    "LEH": 0,
+    "LIV": 0,
+    "LON": 1696,
+    "NOR": 0,
+    "ROT": 0,
+    "TRI": 10
+   },
+   "cut_off_date": "2026-10-06",
+   "date": "2026-10-07",
+   "lots_bought_today": 0,
+   "lots_graded_today": 0,
+   "lots_sold_today": 0,
+   "non_tend_lots": 17,
+   "suspended_lots": 0,
+   "tenders_today": 0,
+   "total_bags_60kg_equivalent": 865667,
+   "total_lots_certified": 5194
   }
  ]
 }

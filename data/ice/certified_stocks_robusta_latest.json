@@ -1,38 +1,38 @@
 {
- "as_of": "2026-10-12",
+ "as_of": "2026-10-13",
  "daily_fetched": [
-  "2026-07-17",
-  "2026-07-20",
-  "2026-07-21",
-  "2026-07-22",
-  "2026-07-23",
-  "2026-07-24",
-  "2026-07-27",
-  "2026-07-28",
-  "2026-07-29",
-  "2026-07-30",
-  "2026-07-31",
-  "2026-08-03",
-  "2026-08-04",
-  "2026-08-05",
-  "2026-08-06",
-  "2026-08-07",
-  "2026-08-10",
-  "2026-09-21",
-  "2026-09-23",
-  "2026-10-02",
-  "2026-10-08",
+  "2026-06-10",
+  "2026-06-17",
+  "2026-06-29",
+  "2026-08-11",
+  "2026-08-12",
+  "2026-08-13",
+  "2026-08-14",
+  "2026-08-17",
+  "2026-08-18",
+  "2026-08-19",
+  "2026-08-20",
+  "2026-08-21",
+  "2026-08-24",
+  "2026-08-25",
+  "2026-09-04",
+  "2026-09-11",
+  "2026-09-14",
+  "2026-09-15",
+  "2026-09-16",
+  "2026-09-24",
   "2026-10-09",
-  "2026-10-12"
+  "2026-10-12",
+  "2026-10-13"
  ],
- "generated_at": "2026-10-13T08:35:51+00:00",
+ "generated_at": "2026-10-14T07:59:19+00:00",
  "latest_detail": {
   "stock_report": {
-   "cut_off_date": "2026-10-11",
+   "cut_off_date": "2026-10-12",
    "grand_total": {
     "non_tend": 17,
     "suspended": 0,
-    "with_val_cert": 5184
+    "with_val_cert": 5309
    },
    "ports": [
     {
@@ -40,14 +40,14 @@
      "port_id": "ANT",
      "port_name": "Antwerp",
      "suspended": 0,
-     "with_val_cert": 3557
+     "with_val_cert": 3693
     },
     {
      "non_tend": 0,
      "port_id": "LON",
      "port_name": "London",
      "suspended": 0,
-     "with_val_cert": 1617
+     "with_val_cert": 1606
     },
     {
      "non_tend": 0,
@@ -121,1382 +121,15 @@
     }
    ]
   },
-  "stock_report_url": "https://www.ice.com/marketdata/publicdocs/liffe/coffee/stock_reports/Stock_Report_RC_20261012_103650.csv"
+  "stock_report_url": "https://www.ice.com/marketdata/publicdocs/liffe/coffee/stock_reports/Stock_Report_RC_20261013_105102.csv"
  },
  "monthly": {
-  "age_allowance": [
-   {
-    "month_end": "2026-09-30",
-    "report_date": "2026-09-30",
-    "transition": {
-     "buckets": [
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 2230,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 4440,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 6670,
-       "months_since_graded": 1
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 9090,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 100
-       },
-       "grand_total_mt": 9190,
-       "months_since_graded": 2
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 6260,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 6260,
-       "months_since_graded": 3
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 4080,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 460,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 4540,
-       "months_since_graded": 4
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 720,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 4560,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 5280,
-       "months_since_graded": 5
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 280,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 3530,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 3810,
-       "months_since_graded": 6
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 1390,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 1390,
-       "months_since_graded": 7
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 780,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 780,
-       "months_since_graded": 8
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 4140,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 4140,
-       "months_since_graded": 9
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 1120,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 1120,
-       "months_since_graded": 10
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 1200,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 1200,
-       "months_since_graded": 11
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 0,
-       "months_since_graded": 12
-      },
-      {
-       "age_allowance_usd_per_mt": 5.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 200,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 200,
-       "months_since_graded": 13
-      },
-      {
-       "age_allowance_usd_per_mt": 10.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 10,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 10,
-       "months_since_graded": 14
-      },
-      {
-       "age_allowance_usd_per_mt": 15.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 2050,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 2050,
-       "months_since_graded": 15
-      },
-      {
-       "age_allowance_usd_per_mt": 20.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 130,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 130,
-       "months_since_graded": 16
-      },
-      {
-       "age_allowance_usd_per_mt": 25.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 750,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 1160,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 1910,
-       "months_since_graded": 17
-      },
-      {
-       "age_allowance_usd_per_mt": 30.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 140,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 140,
-       "months_since_graded": 18
-      },
-      {
-       "age_allowance_usd_per_mt": 35.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 90,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 90,
-       "months_since_graded": 19
-      },
-      {
-       "age_allowance_usd_per_mt": 40.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 0,
-       "months_since_graded": 20
-      },
-      {
-       "age_allowance_usd_per_mt": 45.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 60,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 490,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 550,
-       "months_since_graded": 21
-      },
-      {
-       "age_allowance_usd_per_mt": 50.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 20,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 20,
-       "months_since_graded": 22
-      },
-      {
-       "age_allowance_usd_per_mt": 55.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 0,
-       "months_since_graded": 23
-      },
-      {
-       "age_allowance_usd_per_mt": 60.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 0,
-       "months_since_graded": 24
-      },
-      {
-       "age_allowance_usd_per_mt": 65.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 0,
-       "months_since_graded": 25
-      },
-      {
-       "age_allowance_usd_per_mt": 70.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 0,
-       "months_since_graded": 26
-      },
-      {
-       "age_allowance_usd_per_mt": 75.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 480,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 480,
-       "months_since_graded": 27
-      },
-      {
-       "age_allowance_usd_per_mt": 80.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 10,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 370,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 380,
-       "months_since_graded": 28
-      },
-      {
-       "age_allowance_usd_per_mt": 85.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 10,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 10,
-       "months_since_graded": 29
-      },
-      {
-       "age_allowance_usd_per_mt": 90.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 620,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 620,
-       "months_since_graded": 30
-      },
-      {
-       "age_allowance_usd_per_mt": 95.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 870,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 870,
-       "months_since_graded": 31
-      }
-     ],
-     "grand_total_mt": 51840,
-     "ports": [
-      "AMS",
-      "ANT",
-      "BAR",
-      "BRE",
-      "FEL",
-      "GEN",
-      "HAM",
-      "LEH",
-      "LON",
-      "NYK",
-      "NOR",
-      "ROT",
-      "TRI"
-     ],
-     "report_date": "2026-09-30",
-     "totals_by_port": {
-      "AMS": 0,
-      "ANT": 34620,
-      "BAR": 0,
-      "BRE": 0,
-      "FEL": 0,
-      "GEN": 0,
-      "HAM": 0,
-      "LEH": 0,
-      "LON": 17120,
-      "NOR": 0,
-      "NYK": 0,
-      "ROT": 0,
-      "TRI": 100
-     }
-    },
-    "valid": {
-     "buckets": [
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 2230,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 4440,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 6670,
-       "months_since_graded": 1
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 9090,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 100
-       },
-       "grand_total_mt": 9190,
-       "months_since_graded": 2
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 6260,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 6260,
-       "months_since_graded": 3
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 4080,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 460,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 4540,
-       "months_since_graded": 4
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 720,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 4560,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 5280,
-       "months_since_graded": 5
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 280,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 3530,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 3810,
-       "months_since_graded": 6
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 1390,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 1390,
-       "months_since_graded": 7
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 780,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 780,
-       "months_since_graded": 8
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 4140,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 4140,
-       "months_since_graded": 9
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 1120,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 1120,
-       "months_since_graded": 10
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 1200,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 1200,
-       "months_since_graded": 11
-      },
-      {
-       "age_allowance_usd_per_mt": null,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 0,
-       "months_since_graded": 12
-      },
-      {
-       "age_allowance_usd_per_mt": 5.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 200,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 200,
-       "months_since_graded": 13
-      },
-      {
-       "age_allowance_usd_per_mt": 10.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 10,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 10,
-       "months_since_graded": 14
-      },
-      {
-       "age_allowance_usd_per_mt": 15.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 2050,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 2050,
-       "months_since_graded": 15
-      },
-      {
-       "age_allowance_usd_per_mt": 20.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 130,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 130,
-       "months_since_graded": 16
-      },
-      {
-       "age_allowance_usd_per_mt": 25.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 750,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 1160,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 1910,
-       "months_since_graded": 17
-      },
-      {
-       "age_allowance_usd_per_mt": 30.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 140,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 140,
-       "months_since_graded": 18
-      },
-      {
-       "age_allowance_usd_per_mt": 35.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 90,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 90,
-       "months_since_graded": 19
-      },
-      {
-       "age_allowance_usd_per_mt": 40.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 0,
-       "months_since_graded": 20
-      },
-      {
-       "age_allowance_usd_per_mt": 45.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 60,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 490,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 550,
-       "months_since_graded": 21
-      },
-      {
-       "age_allowance_usd_per_mt": 50.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 20,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 20,
-       "months_since_graded": 22
-      },
-      {
-       "age_allowance_usd_per_mt": 55.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 0,
-       "months_since_graded": 23
-      },
-      {
-       "age_allowance_usd_per_mt": 60.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 0,
-       "months_since_graded": 24
-      },
-      {
-       "age_allowance_usd_per_mt": 65.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 0,
-       "months_since_graded": 25
-      },
-      {
-       "age_allowance_usd_per_mt": 70.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 0,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 0,
-       "months_since_graded": 26
-      },
-      {
-       "age_allowance_usd_per_mt": 75.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 480,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 480,
-       "months_since_graded": 27
-      },
-      {
-       "age_allowance_usd_per_mt": 80.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 10,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 370,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 380,
-       "months_since_graded": 28
-      },
-      {
-       "age_allowance_usd_per_mt": 85.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 10,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 10,
-       "months_since_graded": 29
-      },
-      {
-       "age_allowance_usd_per_mt": 90.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 620,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 620,
-       "months_since_graded": 30
-      },
-      {
-       "age_allowance_usd_per_mt": 95.0,
-       "by_port": {
-        "AMS": 0,
-        "ANT": 0,
-        "BAR": 0,
-        "BRE": 0,
-        "FEL": 0,
-        "GEN": 0,
-        "HAM": 0,
-        "LEH": 0,
-        "LON": 870,
-        "NOR": 0,
-        "NYK": 0,
-        "ROT": 0,
-        "TRI": 0
-       },
-       "grand_total_mt": 870,
-       "months_since_graded": 31
-      }
-     ],
-     "grand_total_mt": 51840,
-     "ports": [
-      "AMS",
-      "ANT",
-      "BAR",
-      "BRE",
-      "FEL",
-      "GEN",
-      "HAM",
-      "LEH",
-      "LON",
-      "NYK",
-      "NOR",
-      "ROT",
-      "TRI"
-     ],
-     "report_date": "2026-09-30",
-     "totals_by_port": {
-      "AMS": 0,
-      "ANT": 34620,
-      "BAR": 0,
-      "BRE": 0,
-      "FEL": 0,
-      "GEN": 0,
-      "HAM": 0,
-      "LEH": 0,
-      "LON": 17120,
-      "NOR": 0,
-      "NYK": 0,
-      "ROT": 0,
-      "TRI": 100
-     }
-    }
-   }
-  ],
-  "iss_recv_monthly": [
-   {
-    "grand_total": {
-     "bought": 4358,
-     "sold": 4358
-    },
-    "members": [
-     {
-      "bought": 29,
-      "code": "ADU",
-      "sold": 24
-     },
-     {
-      "bought": 899,
-      "code": "FIM",
-      "sold": 309
-     },
-     {
-      "bought": 3339,
-      "code": "ICS",
-      "sold": 4025
-     },
-     {
-      "bought": 80,
-      "code": "MFL",
-      "sold": 0
-     },
-     {
-      "bought": 11,
-      "code": "SCD",
-      "sold": 0
-     }
-    ],
-    "month": "2026-09",
-    "report_date": "2026-09-30"
-   }
-  ]
+  "age_allowance": [],
+  "iss_recv_monthly": []
  },
  "recent_activity": {
   "grading_appeals": [],
   "grading_overview": [
-   {
-    "date": "2026-10-02",
-    "forecast_lots": 0,
-    "queue_lots": 0,
-    "report_date": "2026-10-02",
-    "total_pending_lots": 0
-   },
-   {
-    "date": "2026-10-08",
-    "forecast_lots": 90,
-    "queue_lots": 0,
-    "report_date": "2026-10-08",
-    "total_pending_lots": 90
-   },
    {
     "date": "2026-10-09",
     "forecast_lots": 140,
@@ -1510,45 +143,16 @@
     "queue_lots": 0,
     "report_date": "2026-10-12",
     "total_pending_lots": 140
+   },
+   {
+    "date": "2026-10-13",
+    "forecast_lots": 200,
+    "queue_lots": 0,
+    "report_date": "2026-10-13",
+    "total_pending_lots": 200
    }
   ],
   "gradings": [
-   {
-    "date": "2026-10-02",
-    "entries": [
-     {
-      "allowance_cts_lb": null,
-      "class": null,
-      "lots": 6,
-      "origin": "Vietnam",
-      "port": "ANT",
-      "section": "CONTINENTAL LOTS",
-      "tenderable": false
-     },
-     {
-      "allowance_cts_lb": -30.0,
-      "class": 2,
-      "lots": 54,
-      "origin": "Vietnam",
-      "port": "ANT",
-      "section": "CONTINENTAL LOTS",
-      "tenderable": true
-     }
-    ],
-    "panel_date": "2026-10-02",
-    "panel_time": "08:00",
-    "report_date": "2026-10-02",
-    "report_time": "17:00",
-    "summary": {
-     "lots_graded_month": 60,
-     "lots_graded_today": 60,
-     "non_tenderable_month": 6,
-     "non_tenderable_today": 6,
-     "tenderable_month": 54,
-     "tenderable_today": 54
-    },
-    "url": "https://www.ice.com/marketdata/publicdocs/liffe/coffee/gradings/gradrc_261002-1.txt"
-   },
    {
     "date": "2026-10-09",
     "entries": [
@@ -1629,6 +233,51 @@
      "tenderable_today": 140
     },
     "url": "https://www.ice.com/marketdata/publicdocs/liffe/coffee/gradings/gradrc_261012-1.txt"
+   },
+   {
+    "date": "2026-10-13",
+    "entries": [
+     {
+      "allowance_cts_lb": 0.0,
+      "class": 1,
+      "lots": 20,
+      "origin": "Brazilian Conillon",
+      "port": "ANT",
+      "section": "CONTINENTAL LOTS",
+      "tenderable": true
+     },
+     {
+      "allowance_cts_lb": -30.0,
+      "class": 2,
+      "lots": 115,
+      "origin": "Brazilian Conillon",
+      "port": "ANT",
+      "section": "CONTINENTAL LOTS",
+      "tenderable": true
+     },
+     {
+      "allowance_cts_lb": -90.0,
+      "class": 4,
+      "lots": 5,
+      "origin": "Brazilian Conillon",
+      "port": "ANT",
+      "section": "CONTINENTAL LOTS",
+      "tenderable": true
+     }
+    ],
+    "panel_date": "2026-10-13",
+    "panel_time": "08:00",
+    "report_date": "2026-10-13",
+    "report_time": "17:06",
+    "summary": {
+     "lots_graded_month": 419,
+     "lots_graded_today": 140,
+     "non_tenderable_month": 6,
+     "non_tenderable_today": 0,
+     "tenderable_month": 413,
+     "tenderable_today": 140
+    },
+    "url": "https://www.ice.com/marketdata/publicdocs/liffe/coffee/gradings/gradrc_261013-1.txt"
    }
   ],
   "infested_warrants": [],
@@ -1636,58 +285,6 @@
   "tenders": []
  },
  "snapshots": [
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 3455,
-    "BAR": 0,
-    "BRE": 0,
-    "FEL": 0,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1696,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 10
-   },
-   "cut_off_date": "2026-10-01",
-   "date": "2026-10-02",
-   "lots_bought_today": 0,
-   "lots_graded_today": 60,
-   "lots_sold_today": 0,
-   "non_tend_lots": 11,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 860167,
-   "total_lots_certified": 5161
-  },
-  {
-   "by_port_lots": {
-    "AMS": 0,
-    "ANT": 3488,
-    "BAR": 0,
-    "BRE": 0,
-    "FEL": 0,
-    "HAM": 0,
-    "LEH": 0,
-    "LIV": 0,
-    "LON": 1696,
-    "NOR": 0,
-    "ROT": 0,
-    "TRI": 10
-   },
-   "cut_off_date": "2026-10-07",
-   "date": "2026-10-08",
-   "lots_bought_today": 0,
-   "lots_graded_today": 0,
-   "lots_sold_today": 0,
-   "non_tend_lots": 17,
-   "suspended_lots": 0,
-   "tenders_today": 0,
-   "total_bags_60kg_equivalent": 865667,
-   "total_lots_certified": 5194
-  },
   {
    "by_port_lots": {
     "AMS": 0,
@@ -1739,6 +336,32 @@
    "tenders_today": 0,
    "total_bags_60kg_equivalent": 864000,
    "total_lots_certified": 5184
+  },
+  {
+   "by_port_lots": {
+    "AMS": 0,
+    "ANT": 3693,
+    "BAR": 0,
+    "BRE": 0,
+    "FEL": 0,
+    "HAM": 0,
+    "LEH": 0,
+    "LIV": 0,
+    "LON": 1606,
+    "NOR": 0,
+    "ROT": 0,
+    "TRI": 10
+   },
+   "cut_off_date": "2026-10-12",
+   "date": "2026-10-13",
+   "lots_bought_today": 0,
+   "lots_graded_today": 140,
+   "lots_sold_today": 0,
+   "non_tend_lots": 17,
+   "suspended_lots": 0,
+   "tenders_today": 0,
+   "total_bags_60kg_equivalent": 884833,
+   "total_lots_certified": 5309
   }
  ]
 }

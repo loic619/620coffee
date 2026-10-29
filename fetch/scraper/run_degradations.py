@@ -48,6 +48,21 @@ def _load() -> list[dict]:
         return []
 
 
+def _identity(r: dict) -> tuple:
+    return (r.get("file"), r.get("kind"), tuple(r.get("items") or []))
+
+
+def _superseded(old: dict, new: dict) -> bool:
+    """True when `new` replaces `old`: same run and either an earlier attempt
+    (a row written before `run_attempt` existed counts as one) or the same
+    degradation written again within this attempt."""
+    if old.get("run_id") != new["run_id"]:
+        return False
+    if old.get("run_attempt") != new["run_attempt"]:
+        return True
+    return _identity(old) == _identity(new)
+
+
 def record(*, workflow: str, file: str, kind: str, detail: str,
            items: list[str] | None = None) -> dict | None:
     """Note that this run finished green having skipped some of its work.
@@ -58,12 +73,17 @@ def record(*, workflow: str, file: str, kind: str, detail: str,
     pass. `kind` is a short slug ("http_403"); `detail` is the sentence a person
     reads; `items` names what was skipped.
 
-    Idempotent per GitHub run id: a retried attempt replaces its own row rather
-    than appending a second one. Never raises — a telemetry write must not be
-    able to fail a run that otherwise succeeded.
+    A run may skip work more than once — CEPEA unreadable AND a restated quote
+    in the same scraper run — so every degradation is its own row. A row's
+    identity is (run id, file, kind, items): writing the same degradation twice
+    in one attempt replaces it, a different one is appended beside it. A
+    retried attempt (a new GITHUB_RUN_ATTEMPT on the same run id) drops the
+    rows of the earlier attempt rather than adding to them. Never raises — a
+    telemetry write must not be able to fail a run that otherwise succeeded.
     """
     try:
         run_id = os.environ.get("GITHUB_RUN_ID") or "local"
+        attempt = os.environ.get("GITHUB_RUN_ATTEMPT") or "1"
         now = datetime.now(UTC)
         row = {
             "at": now.isoformat(timespec="seconds"),
@@ -71,6 +91,7 @@ def record(*, workflow: str, file: str, kind: str, detail: str,
             "workflow": workflow,
             "file": file,
             "run_id": run_id,
+            "run_attempt": attempt,
             "run_url": (f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{run_id}"
                         if os.environ.get("GITHUB_REPOSITORY") and run_id != "local" else None),
             "kind": kind,
@@ -79,7 +100,7 @@ def record(*, workflow: str, file: str, kind: str, detail: str,
         }
         cutoff = (now - timedelta(days=KEEP_DAYS)).date().isoformat()
         rows = [r for r in _load()
-                if r.get("date", "") >= cutoff and r.get("run_id") != run_id]
+                if r.get("date", "") >= cutoff and not _superseded(r, row)]
         rows.append(row)
         rows = sorted(rows, key=lambda r: r.get("at", ""))[-KEEP_ROWS:]
         PATH.parent.mkdir(parents=True, exist_ok=True)

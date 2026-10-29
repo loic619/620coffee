@@ -284,11 +284,13 @@ def test_a_payload_without_a_status_sidecar_fails(tmp_path):
 
 
 def test_a_clean_window_passes(tmp_path):
+    # Record dates are relative to today, like the declared window: hard-coded
+    # 2026-09 dates fell outside a today-13 window once the calendar moved on.
     out = tmp_path / "ice"
     out.mkdir(parents=True)
     _write_payload(out, "certified_stocks_arabica", {
-        "snapshots": [{"date": "2026-09-07"}],
-        "recent_activity": {"tenders": [{"date": "2026-09-06"}]},
+        "snapshots": [{"date": (date.today() - timedelta(days=1)).isoformat()}],
+        "recent_activity": {"tenders": [{"date": (date.today() - timedelta(days=2)).isoformat()}]},
     }, declared=(date.today() - timedelta(days=13)).isoformat())
 
     result = _run_window_check(tmp_path)

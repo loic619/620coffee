@@ -2,8 +2,9 @@
 acaphe_poller.py — poll iquote.php, write cleaned JSON to a scratch directory
 and push it to Redis.
 
-PORTED TO 620 — the docstring above is the first of three divergences from
-619's copy; the other two are the OUTPUT / VIETNAM_LAST anchors below. 619
+PORTED TO 620 — the docstring above is the first of four divergences from
+619's copy; the others are the OUTPUT / VIETNAM_LAST anchors and the no-VN
+alert (VN_MAX_AGE_H, register #262) below. 619
 writes into its frontend's public data directory. Everything else in this file
 is byte-identical, deliberately: Redis is the live path for both repositories,
 so a difference in what reaches it would have to mean the poll differed, not
@@ -35,7 +36,7 @@ import os
 import re
 import sys
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import requests
@@ -448,8 +449,97 @@ def _save_vn_prices_to_db(viet: dict, fetched_at: str) -> None:
         print(f"[acaphe][db] write failed: {exc}")
 
 
+# PORTED TO 620 — the fourth divergence from 619's copy: the no-VN alert
+# (register #262). A tick with no VN bids used to only print, so a whole VN
+# morning could pass with no `vietnam_last` write and every run green; 619's
+# check 2.04 (persist_vn_daily.py, MAX_AGE_H = 26) found it a day later, on
+# 2026-09-29 and again on 2026-10-23. 620 is the production poller and owns the
+# key, so the alarm belongs here.
+#
+# Two rules, deliberately different in scope:
+#
+#   ::error:: + exit 1 — the stored snapshot is older than VN_MAX_AGE_H,
+#     counted in WEEKDAY hours (Sat/Sun UTC excluded). Not gated on the clock:
+#     26 weekday hours always spans a whole weekday VN window, so the condition
+#     itself proves an expected window produced nothing, whatever hour this tick
+#     runs. Gating it on 00:00-07:59 UTC would delay the alarm by a day, because
+#     the day's last VN save routinely lands at ~08:31 UTC (the first trading
+#     tick) and so never reaches 26 h inside the next morning's window. The
+#     weekday count is what keeps Monday mornings quiet: Friday 08:31 -> Monday
+#     00:07 is 63.6 h of wall clock but 15.6 weekday hours.
+#   ::warning:: — VN bids absent but the snapshot still fresh, and only inside
+#     VN_WINDOW: weekdays 00:00-07:59 UTC, the same block as the workflow's
+#     '7,27,47 0-7 * * 1-5' cron. The poller's only other notion of the window,
+#     ACAPHE_VN_ONLY, is set for that scheduled cron alone, and most of the
+#     window's coverage is cron-job.org dispatches that carry no schedule, so
+#     the clock is the faithful test. Outside it acaphe strips VN prices by
+#     design; a warning on every afternoon tick would bury the real ones.
+VN_MAX_AGE_H         = 26           # same bound as 619's 2.04 (persist_vn_daily.py)
+VN_WINDOW_UTC_HOURS  = range(0, 8)  # mirrors the '7,27,47 0-7 * * 1-5' cron
+VN_STALE             = False        # set by fetch_and_save; --once exits 1 on it
+
+
+def _weekday_hours_between(start: datetime, end: datetime) -> float:
+    """Hours between two aware datetimes, not counting Saturday/Sunday (UTC)."""
+    if end <= start:
+        return 0.0
+    total = 0.0
+    cursor = start
+    while cursor < end:
+        next_midnight = datetime.combine(cursor.date() + timedelta(days=1),
+                                         datetime.min.time(), tzinfo=UTC)
+        segment_end = min(next_midnight, end)
+        if cursor.weekday() < 5:
+            total += (segment_end - cursor).total_seconds() / 3600
+        cursor = segment_end
+    return total
+
+
+def _in_vn_window(now: datetime) -> bool:
+    return now.weekday() < 5 and now.hour in VN_WINDOW_UTC_HOURS
+
+
+def _vn_absent_alert(last_vn: dict | None, now: datetime) -> str:
+    """Classify a tick with no VN bids: 'error', 'warning' or 'quiet'.
+
+    Prints the matching GitHub annotation; the caller turns 'error' into a
+    non-zero exit.
+    """
+    saved_raw = (last_vn or {}).get("saved_at")
+    saved = None
+    if saved_raw:
+        try:
+            saved = datetime.fromisoformat(str(saved_raw).replace("Z", "+00:00"))
+            if saved.tzinfo is None:
+                saved = saved.replace(tzinfo=UTC)
+        except ValueError:
+            saved = None
+
+    if saved is not None:
+        age_h = _weekday_hours_between(saved, now)
+        if age_h > VN_MAX_AGE_H:
+            print(f"::error::vietnam_last is {age_h:.1f} weekday hours old "
+                  f"(saved_at {saved_raw}, limit {VN_MAX_AGE_H} h) and acaphe "
+                  "served no VN bids on this tick — a whole VN window has passed "
+                  "with no VN prices")
+            return "error"
+
+    if not _in_vn_window(now):
+        return "quiet"
+    if saved is None:
+        print("::warning::acaphe served no VN bids and vietnam_last is unreadable "
+              f"(value: {saved_raw!r}) — its age cannot be checked")
+    else:
+        print(f"::warning::acaphe served no VN bids in the VN window; vietnam_last "
+              f"is {_weekday_hours_between(saved, now):.1f} weekday hours old "
+              f"(limit {VN_MAX_AGE_H} h)")
+    return "warning"
+
+
 def fetch_and_save(cookies: dict) -> bool:
     """Fetch iquote.php, transform, write to OUTPUT. Returns True on success."""
+    global VN_STALE
+    VN_STALE = False
     backend_dir = str(Path(__file__).parents[1])
     if backend_dir not in sys.path:
         sys.path.insert(0, backend_dir)
@@ -479,6 +569,9 @@ def fetch_and_save(cookies: dict) -> bool:
             if last_vn:
                 data["vietnam"] = last_vn
                 print("[acaphe] VN data absent — injected last-known snapshot")
+            # PORTED TO 620 — see VN_MAX_AGE_H. The tick still publishes
+            # normally; only the exit code of --once changes.
+            VN_STALE = _vn_absent_alert(last_vn, datetime.now(UTC)) == "error"
 
         # Validate before publishing: a degraded payload must not overwrite the
         # last good one (see classify()). The status travels with the data so
@@ -550,7 +643,10 @@ async def main():
             cookies, _ = await get_cookies(force_login=True)
             ok = fetch_and_save(cookies)
         # Non-zero exit on failure so the workflow surfaces the problem.
-        sys.exit(0 if ok else 1)
+        # PORTED TO 620 — a stale vietnam_last (see VN_MAX_AGE_H) fails the tick
+        # too. Only here: the persistent loop counts False returns toward a
+        # re-login, which a missing VN block is no reason to do.
+        sys.exit(0 if ok and not VN_STALE else 1)
 
     print(f"[acaphe] Polling every {POLL_INTERVAL}s → {OUTPUT}")
     fails = 0

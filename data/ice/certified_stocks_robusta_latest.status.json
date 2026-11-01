@@ -1,27 +1,23 @@
 {
   "dataset": "ice.certified_stocks_robusta",
   "ok": true,
-  "fetched_at": "2026-10-31T08:22:48Z",
+  "fetched_at": "2026-11-01T10:12:58Z",
   "payload": "certified_stocks_robusta_latest.json",
-  "sha256": "cedd8ef745cadd7d5624e65e2d5b23bde26156304d386891b9255f7eb50fa7f2",
-  "bytes": 13920,
-  "snapshots": 5,
+  "sha256": "2804664f5b985da00d1387cf6cc6c4201f81d7f341fd9e53b6dc71a02fd5b32d",
+  "bytes": 118083,
+  "snapshots": 19,
   "window": {
-    "start": "2026-10-20",
+    "start": "2026-08-26",
     "end": "2026-10-30"
   },
   "errors": [],
   "dropped_fields": [
     "port_peaks"
   ],
-  "trimmed_before": "2026-10-18",
+  "trimmed_before": "2026-08-26",
   "trimmed_records": {
-    "snapshots": 18,
-    "recent_activity.gradings": 10,
-    "recent_activity.iss_recv_daily": 6,
-    "recent_activity.tenders": 6,
-    "recent_activity.grading_overview": 10,
-    "monthly.iss_recv_monthly": 2,
-    "monthly.age_allowance": 3
+    "snapshots": 6,
+    "recent_activity.gradings": 1,
+    "recent_activity.grading_overview": 1
   }
 }

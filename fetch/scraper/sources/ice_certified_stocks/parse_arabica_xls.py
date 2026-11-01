@@ -12,12 +12,15 @@ ice_arabica_groups for the by_group rollups the certified-stocks panel needs.
 """
 from __future__ import annotations
 
+import logging
 import re
 from datetime import datetime
 
 import xlrd
 
 from ..ice_arabica_groups import group_of
+
+log = logging.getLogger(__name__)
 
 _AS_OF = re.compile(r"As of:\s*([A-Za-z]+ \d{1,2}, \d{4})")
 _BAG_COUNT = re.compile(r"^\s*(\d[\d,]*|No)\s+Bags\s+(Passed|Failed)", re.IGNORECASE)
@@ -129,8 +132,14 @@ def _parse_grading_summary(sheet, section_row: int) -> dict:
       row; then "BAGS FAILED GRADING" with its own table. We capture the FULL
       matrix for each (by_origin × by_port), not just the grand total, so the
       certified-stocks model can attribute gradings to (origin, port) cohorts.
+
+    ABSENT IS NOT ZERO. A count is set only when an ICE line was matched
+    ("No Bags Passed Today" is a real 0). If the section exists but no line
+    matches — an unknown wording — the count is None and a warning is logged,
+    so an unparsed report can never enter the history as a genuine zero.
     """
-    passed = failed = 0
+    passed: int | None = None
+    failed: int | None = None
     passed_text = failed_text = None
     # Per-(origin, port) grading matrices — only present on action-day (matrix)
     # reports; None on legacy/no-action days. Shape mirrors _parse_matrix:
@@ -164,6 +173,10 @@ def _parse_grading_summary(sheet, section_row: int) -> dict:
                 passed = n; passed_text = text
             else:
                 failed = n; failed_text = text
+    if passed_text is None or failed_text is None:
+        missing = [k for k, t in (("passed", passed_text), ("failed", failed_text)) if t is None]
+        log.warning("arabica grading summary (row %d): no ICE line matched for %s — "
+                    "stored as null, not 0", section_row, "/".join(missing))
     return {
         "passed_today_bags": passed,
         "failed_today_bags": failed,
@@ -195,6 +208,9 @@ def parse_arabica_xls(content: bytes) -> dict:
             break
 
     sections = _find_sections(sheet)
+    if "grading_summary" not in sections:
+        log.warning("arabica report %s: no TODAY'S GRADING SUMMARY section — "
+                    "grading stored as null, not 0", report_date_iso)
     out = {
         "report_date":    report_date_iso,
         "total_certified": _parse_matrix(sheet, sections["total_certified"]) if "total_certified" in sections else None,

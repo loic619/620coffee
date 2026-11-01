@@ -1319,8 +1319,15 @@ def _arabica_snapshot(d: date, parsed: dict) -> dict:
         "transition_bags":      sections.get("transition", {}).get("grand_total", 0),
         "pending_grading_bags": sections.get("pending_grading", {}).get("grand_total", 0),
         "rebagging_bags":       sections.get("rebagging", {}).get("grand_total", 0),
-        "passed_today_bags":    gt.get("passed_today_bags", 0),
-        "failed_today_bags":    gt.get("failed_today_bags", 0),
+        # Absent is NOT zero: a report with no grading section, or one whose
+        # wording the parser did not recognise, stores None. A real ICE zero
+        # ("No Bags Passed Today") is 0 and carries its source line below.
+        "passed_today_bags":    gt.get("passed_today_bags"),
+        "failed_today_bags":    gt.get("failed_today_bags"),
+        # The ICE line each count was read from, so history can tell a real
+        # zero from a miss without re-fetching the .xls.
+        "passed_text":          gt.get("passed_text"),
+        "failed_text":          gt.get("failed_text"),
         # Convenience rollups (still flat for the headline charts):
         "by_port":              tc.get("by_port", {}),
         "by_group":             tc.get("by_group", {}),

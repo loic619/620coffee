@@ -1,0 +1,13 @@
+{
+  "_provenance": "Reconstructed from the 620 poll-acaphe-quotes run logs of 2026-11-09/11, not a saved response body: the session that wrote it could not reach acaphe.com, and the source is login-gated. The 'placeholder' High is the exact value those logs print (repr, full length). The 'published' High follows the format _parse_vietnam matches, with the BMT bid/offer and VCB rate the same logs report (run 42967715894, 2026-11-11T05:44Z); its HCM figures are illustrative, since the logs do not print them. Futures fields carry the logged front-month last prices. No session, cookie or account data.",
+  "placeholder": [
+    {"stt": "0", "Month": "RF26", "Last": "3265", "Change": "-17", "Change_per": "<span>(0.52%)</span>", "now_time": "Wed 11 Nov 2026 - 20:00:00"},
+    {"stt": "1", "Month": "AH26", "Last": "271.4", "Change": "-2.2", "Change_per": "<span>(0.80%)</span>"},
+    {"stt": "14", "High": "acaphe()", "Low": "25,440 (11:26 Nov 11)", "Time": "", "Date": "", "TimeV": ""}
+  ],
+  "published": [
+    {"stt": "0", "Month": "RF26", "Last": "3265", "Change": "-17", "Change_per": "<span>(0.52%)</span>", "now_time": "Wed 11 Nov 2026 - 12:45:08"},
+    {"stt": "1", "Month": "AH26", "Last": "271.4", "Change": "-2.2", "Change_per": "<span>(0.80%)</span>"},
+    {"stt": "14", "High": "11:30 11/11 (x) BMT bid 83000-83500 / offer 84000-84500 HCM bid 84500-85000 / offer 85500-86000", "Low": "25,440 (11:26 Nov 11)", "Time": "", "Date": "", "TimeV": ""}
+  ]
+}

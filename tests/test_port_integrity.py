@@ -135,7 +135,12 @@ def test_every_third_party_import_is_installed_by_the_workflow_that_runs_it(path
     # import it here?" — the previous version skipped anything importable in
     # the test environment, which silently exempted a third-party package that
     # happened to be installed locally and was NOT in the workflow's pip line.
-    local = {"scraper", "fetch", "allowlist"}
+    # `telegram` is fetch/telegram/ (620's port of 619's checked sender), not
+    # the PyPI package. `backend` is the orchestrator's 619-side fallback
+    # (`except ImportError: from backend.telegram.sender ...`), never reached
+    # here because fetch/telegram/ resolves first — tests/test_telegram_sender.py
+    # proves the orchestrator lands on 620's sender.
+    local = {"scraper", "fetch", "allowlist", "telegram", "backend"}
     stdlib = set(sys.stdlib_module_names) | {"__future__"}
 
     for node in ast.walk(tree):

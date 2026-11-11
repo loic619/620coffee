@@ -3,7 +3,12 @@
 Run a windowed backfill (default 30 calendar days):
     python -m scraper.sources.ice_certified_stocks.orchestrate --days 30
 
-Or via the dedicated workflow (.github/workflows/scraper-ice-certified-stocks.yml).
+There is no 619 workflow to dispatch: .github/workflows/scraper-ice-certified-stocks.yml
+was deleted in 9a1d95945 on 2026-09-14 (#1009), which made 620 the sole ICE
+fetcher. In production this module is now reached only as a library — 619 pulls
+620's output through .github/workflows/sync-from-620.yml ("2.03 – Sync ICE window
+from 620"), whose consume_620.py imports the parsers and writers below. The
+command above still works by hand wherever ICE is reachable.
 
 Outputs:
   frontend/public/data/certified_stocks_arabica.json
@@ -36,6 +41,11 @@ import requests
 
 from ... import run_degradations
 from . import fetch as F
+from .arabica_ageing_history import (
+    append_ageing_history,
+    build_ageing_cohorts,
+    validate_ageing_report,
+)
 from .cohort_outflow import (
     build_cohort_dna,
     build_current_by_origin,
@@ -50,6 +60,7 @@ from .parse_iss_recv import parse_iss_recv_daily, parse_iss_recv_monthly
 from .parse_pdfs import parse_grading_overview_pdf, parse_infested_warrant_pdf
 from .parse_stock_report import parse_stock_report
 from .parse_tenders import parse_tenders
+from .robusta_ageing import build_robusta_ageing_cohorts
 
 # PORTED TO 620 — 619 anchors this on the frontend's public data directory,
 # which does not exist here: 620 is an acquisition worker, not an application.
@@ -344,9 +355,13 @@ def _record_section_block() -> None:
 # finish inside the job timeout, or "swept the whole window, found nothing" is
 # never reachable and every unlucky day dies as a timeout instead. At 4s the
 # 1,810-candidate window is 120.7 minutes, which is why the job timeout moved
-# with it — see timeout-minutes in scraper-ice-certified-stocks.yml. Changing
-# either number without re-checking the other breaks the late-release alert
-# silently.
+# with it. That timeout no longer lives in this repo: 619's
+# scraper-ice-certified-stocks.yml was deleted in 9a1d95945 on 2026-09-14
+# (#1009) and the fetch runs in 620's fetch-ice-certified-stocks.yml, whose
+# 150-minute timeout-minutes is asserted from here by
+# backend/scripts/check_620_fetch_parity.py (workflow "9.05 – 620 fetch
+# parity"). Changing either number without re-checking the other breaks the
+# late-release alert silently.
 _STOCK_SWEEP_INTERVAL_S = 4.0
 
 # Stock_report.csv's HHMMSS publish time varies daily. Strategy is tiered:
@@ -565,18 +580,19 @@ def _notify_late_release(day: date) -> None:
 
 
 def _telegram(text: str, *, tag: str) -> None:
-    """Send one line to the ops chat, or say in the log why it could not."""
-    tok = os.environ.get("TELEGRAM_BOT_TOKEN")
-    chat = os.environ.get("TELEGRAM_CHAT_ID")
-    if not tok or not chat:
+    """Send one line to the Ops topic, or say in the log why it could not.
+
+    Late releases and source blocks are pipeline health, so: Ops. Routed
+    through the checked sender (2026-11-09, topic routing) — this diverges
+    from 620's copy of this function, which still posts to its own chat."""
+    if not os.environ.get("TELEGRAM_BOT_TOKEN"):
         print(f"[{tag}] telegram not configured — not sending")
         return
     try:
-        import requests as _rq
-        _rq.post(f"https://api.telegram.org/bot{tok}/sendMessage",
-                 data={"chat_id": chat, "text": text}, timeout=20)
-    except Exception as e:  # noqa: BLE001 — never fail the run on a notification
-        print(f"[{tag}] telegram send failed: {e}")
+        from telegram.sender import send_checked
+    except ImportError:          # imported as backend.scraper…, not scraper…
+        from backend.telegram.sender import send_checked
+    send_checked(text, topic="ops", parse_mode=None, tag=tag)
 
 
 # ── Edge-triggered block notification ────────────────────────────────────────
@@ -1406,9 +1422,31 @@ def _merge_arabica(new: dict, old: dict) -> dict:
     # Ageing report — keep the older snapshot when the current run didn't
     # land one (e.g. mid-month, no new file published yet). When a fresher
     # month_end comes in it naturally wins because we overwrite.
+    # Guard first: an empty/invalid report (ICE served grand_total 0 for
+    # 2026-05-31) is treated as absent — it never displaces a good one.
+    if new.get("ageing_report"):
+        ok, why = validate_ageing_report(new["ageing_report"])
+        if not ok:
+            print(f"[merge] arabica ageing report rejected ({why}) — keeping the stored one")
+            new["ageing_report"] = None
+            new["ageing_report_url"] = None
     if not new.get("ageing_report") and old.get("ageing_report"):
         new["ageing_report"]     = old["ageing_report"]
         new["ageing_report_url"] = old.get("ageing_report_url")
+    # The slot above holds one month; ageing_history keeps every month-end so
+    # the next report no longer erases the previous one. Idempotent by
+    # month_end, and the carried-forward report is a no-op.
+    history, action = append_ageing_history(
+        old.get("ageing_history"), new.get("ageing_report"), source="ice_aging_xls",
+        provenance={"first_merged_as_of": (new["snapshots"][-1]["date"] if new["snapshots"] else None)})
+    if action not in ("unchanged", "none"):
+        print(f"[merge] arabica ageing_history: {action} "
+              f"({(new.get('ageing_report') or {}).get('month_end')})")
+    if old.get("ageing_history_rejected"):
+        new["ageing_history_rejected"] = old["ageing_history_rejected"]
+    if history:
+        new["ageing_history"] = history
+        new["ageing_cohorts"] = build_ageing_cohorts(history, new["snapshots"])
     if new["snapshots"]:
         new["as_of"] = new["snapshots"][-1]["date"]
     return new
@@ -1707,6 +1745,13 @@ def _merge_robusta(new: dict, old: dict) -> dict:
     # Now that age_allowance, gradings and port_origin_history are all merged,
     # recompute the cohort-DNA outflow so "cohort out" stays fresh each run.
     recompute_robusta_cohort_outflow(new)
+
+    # Port x age checks beside monthly.age_allowance (register #15, robusta
+    # half). Rebuilt every run from the merged inputs, so never stale.
+    new["ageing_cohorts"] = build_robusta_ageing_cohorts(
+        new["monthly"]["age_allowance"],
+        (new.get("recent_activity") or {}).get("gradings") or [],
+        new.get("snapshots") or [])
 
     if new["snapshots"]:
         new["as_of"] = new["snapshots"][-1]["date"]
@@ -2160,7 +2205,7 @@ def run(days_back: int = 30, write: bool = True, merge: bool = True,
 
         # News-feed commentary badge (no-op when DATABASE_URL is unset —
         # keeps local backfills from needing a DB). The actual news.json
-        # republish happens in workflow 1.4 (export-and-publish) which
+        # republish happens in workflow 2.01 (export-and-publish) which
         # reads news_feed and writes frontend/public/data/news.json.
         from .news_emit import emit as _emit_news
         try:

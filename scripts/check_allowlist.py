@@ -28,6 +28,11 @@ FORBIDDEN_KEYS = {
     "port_origin_history": "accumulated history — 619's, not 620's",
     "implied_outflow": "cohort_outflow.py derivation",
     "current_by_origin": "cohort-DNA derivation",
+    # Arabica ageing reconstruction. The fetch may build these in memory (the
+    # 619 sync, PR #23); none of them is ever published.
+    "ageing_history": "accumulated arabica ageing history — 619's, not 620's",
+    "ageing_cohorts": "arabica ageing cohort derivation",
+    "ageing_history_rejected": "ageing-history rows rejected by validation",
 }
 
 MAX_SNAPSHOTS = 60

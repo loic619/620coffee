@@ -2,9 +2,10 @@
 acaphe_poller.py — poll iquote.php, write cleaned JSON to a scratch directory
 and push it to Redis.
 
-PORTED TO 620 — the docstring above is the first of four divergences from
-619's copy; the others are the OUTPUT / VIETNAM_LAST anchors and the no-VN
-alert (VN_MAX_AGE_H, register #262) below. 619
+PORTED TO 620 — the docstring above is the first of five divergences from
+619's copy; the others are the OUTPUT / VIETNAM_LAST anchors, the no-VN
+alert (VN_MAX_AGE_H, register #262) and the VN_PLACEHOLDER log line
+below. 619
 writes into its frontend's public data directory. Everything else in this file
 is byte-identical, deliberately: Redis is the live path for both repositories,
 so a difference in what reaches it would have to mean the poll differed, not
@@ -177,12 +178,25 @@ def _parse_chg_pct(s: str) -> float | None:
     return float(m.group(1)) if m else None
 
 
+# PORTED TO 620 — the fifth divergence from 619's copy. What row14.High holds
+# when acaphe has not published the Vietnamese block: the literal stub
+# `acaphe()`, not a price and not a new format. Every run log kept for this
+# workflow (2026-09-08 onwards) shows it on each tick outside VN publication,
+# and the VN block parses on the ticks where it is published. It used to be
+# logged as "unrecognised", which reads like a parser break; it is named here
+# so that word is kept for a format the patterns below genuinely miss.
+VN_PLACEHOLDER = "acaphe()"
+
+
 def _parse_vietnam(row14: dict) -> dict:
     raw = row14.get("High", "")
     # Diagnostic: when the BMT/HCM patterns stop matching (acaphe rewords the
     # free-text block now and then), log what the row actually carries so the
     # scheduled runs document the new format instead of failing silently.
-    if raw and "BMT bid" not in raw:
+    if raw.strip() == VN_PLACEHOLDER:
+        print("[acaphe] VN block not published this tick "
+              f"(row14.High is acaphe's placeholder {VN_PLACEHOLDER!r})")
+    elif raw and "BMT bid" not in raw:
         print(f"[acaphe] VN row14.High unrecognised: {raw[:300]!r}")
     elif not raw:
         print(f"[acaphe] VN row14 empty High; row keys/preview: "

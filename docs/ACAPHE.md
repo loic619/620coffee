@@ -17,13 +17,15 @@ so the live path does not change.
 workflow externally as well because GitHub's scheduler has throttled this
 workflow twice.
 
-`acaphe_poller.py` differs from 619's copy in **four** places, all marked
-`PORTED TO 620`: the module docstring, the two `OUTPUT` / `VIETNAM_LAST`
-path anchors, and the no-VN alert (register #262): a tick with no VN bids
+`acaphe_poller.py`'s code differs from 619's copy in **two** places, both
+marked `PORTED TO 620`: the path anchors (`ACAPHE_STAGE`, `OUTPUT`,
+`VIETNAM_LAST`), and the no-VN alert (register #262): a tick with no VN bids
 fails with `::error::` when `vietnam_last` is older than 26 weekday hours, and
-warns inside the 00:00-07:59 UTC weekday VN window otherwise. Everything else is byte-identical on purpose — Redis is the live
-path for both, so a difference in what arrives there would have to mean the poll
-differed, not the code. `validate_export.py` is byte-identical.
+warns inside the 00:00-07:59 UTC weekday VN window otherwise. Prose (docstring,
+comments) is not held identical. Any other code difference is drift — Redis is
+the live path for both, so a difference in what arrives there would have to
+mean the poll differed, not the code. 619's `check_620_fetch_parity.py` reports
+it. `validate_export.py` is byte-identical.
 
 ## What is deliberately NOT here
 

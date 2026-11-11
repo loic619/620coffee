@@ -2,14 +2,19 @@
 acaphe_poller.py — poll iquote.php, write cleaned JSON to a scratch directory
 and push it to Redis.
 
-PORTED TO 620 — the docstring above is the first of five divergences from
-619's copy; the others are the OUTPUT / VIETNAM_LAST anchors, the no-VN
-alert (VN_MAX_AGE_H, register #262) and the VN_PLACEHOLDER log line
-below. 619
-writes into its frontend's public data directory. Everything else in this file
-is byte-identical, deliberately: Redis is the live path for both repositories,
-so a difference in what reaches it would have to mean the poll differed, not
-the code.
+PORTED TO 620 — this file is kept in step with 619's copy
+(backend/scraper/acaphe_poller.py), and its code differs from it in two places
+only, each marked `PORTED TO 620` below:
+
+  1. path anchors — ACAPHE_STAGE, OUTPUT and VIETNAM_LAST point at a per-run
+     scratch directory here; 619 writes into its frontend's public data
+     directory. That also costs the `timedelta` in the datetime import line.
+  2. the no-VN alert (VN_MAX_AGE_H and its helpers, register #262), which
+     fails a --once tick when vietnam_last goes stale.
+
+Prose (this docstring, comments) is not held identical. Redis is the live path
+for both repositories, so any other code difference is drift: port it, or name
+it here. 619's check_620_fetch_parity.py reports drift in this file.
 
 Usage (from repo root):
     python fetch/scraper/acaphe_poller.py              # persistent loop
@@ -37,7 +42,7 @@ import os
 import re
 import sys
 import time
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import requests
@@ -178,13 +183,51 @@ def _parse_chg_pct(s: str) -> float | None:
     return float(m.group(1)) if m else None
 
 
-# PORTED TO 620 — the fifth divergence from 619's copy. What row14.High holds
-# when acaphe has not published the Vietnamese block: the literal stub
-# `acaphe()`, not a price and not a new format. Every run log kept for this
-# workflow (2026-09-08 onwards) shows it on each tick outside VN publication,
-# and the VN block parses on the ticks where it is published. It used to be
-# logged as "unrecognised", which reads like a parser break; it is named here
-# so that word is kept for a format the patterns below genuinely miss.
+_VCB_MONTHS = {
+    "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+    "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+}
+
+# VND/USD has traded roughly 23,000–26,500 over recent years. A generous
+# 10,000–40,000 band rejects parse artefacts — e.g. a decimal-formatted
+# "8.7794" whose dot is stripped by re.sub(r"\D", …) → 87794 — without ever
+# clipping a real rate.
+USD_VND_MIN = 10_000
+USD_VND_MAX = 40_000
+
+
+def _parse_vcb_date(low: str, today: date | None = None) -> str | None:
+    """'26,070 (11:26 Jul 15)' → '2026-07-15'.
+
+    The source gives only month/day; resolve the year to the most recent past
+    occurrence of that month/day (so Jul 15 seen in Oct 2026 is 2026, but Dec
+    20 seen in Jan 2027 is 2026). Returns None when no date is present or the
+    month/day cannot be parsed, rather than guessing.
+    """
+    m = re.search(r"\((?:\d{1,2}:\d{2}\s+)?([A-Za-z]{3})\s+(\d{1,2})\)", low)
+    if not m:
+        return None
+    mon = _VCB_MONTHS.get(m.group(1).lower())
+    if not mon:
+        return None
+    today = today or datetime.now(UTC).date()
+    for yr in (today.year, today.year - 1):
+        try:
+            d = date(yr, mon, int(m.group(2)))
+        except ValueError:
+            return None
+        if d <= today:
+            return d.isoformat()
+    return None
+
+
+# What row14.High holds when acaphe has not published the Vietnamese block: the
+# literal stub `acaphe()`, not a price and not a new format. Every run log kept
+# for this workflow (2026-09-08 onwards) shows it on each tick outside VN
+# publication, and the VN block parses on the ticks where it is published. It
+# used to be logged as "unrecognised", which reads like a parser break; it is
+# named here so that word is kept for a format the patterns below genuinely
+# miss. 619 carries the same constant and log line (619 PR #1773).
 VN_PLACEHOLDER = "acaphe()"
 
 
@@ -224,6 +267,17 @@ def _parse_vietnam(row14: dict) -> dict:
     vcm = re.match(r"\s*([\d.,]+)", low)
     usd_vnd = int(re.sub(r"\D", "", vcm.group(1))) if vcm and re.sub(r"\D", "", vcm.group(1)) else None
 
+    # Plausibility guard: an out-of-band value is a parse artefact, not a rate
+    # (see USD_VND_MIN/MAX). Drop both the number and its date rather than
+    # publish an aberration like 87794.
+    if usd_vnd is not None and not (USD_VND_MIN <= usd_vnd <= USD_VND_MAX):
+        print(f"[acaphe] implausible USD/VND {usd_vnd!r} from Low={low[:60]!r}; dropping")
+        usd_vnd = None
+
+    # The parenthetical "(HH:MM Mon DD)" is the VCB quote time, previously
+    # discarded. Capture it only when the number itself is usable.
+    usd_vnd_date = _parse_vcb_date(low) if usd_vnd is not None else None
+
     return {
         "local_time":  local_time,
         "bmt_bid":     bmt.group(1) if bmt else None,
@@ -234,19 +288,34 @@ def _parse_vietnam(row14: dict) -> dict:
         "r2_fob_offer":r2.group(2)  if r2  else None,
         "pepper_faq":  pep.group(1) if pep else None,
         "usd_vnd":     usd_vnd,
+        "usd_vnd_date": usd_vnd_date,
     }
 
 
 def _safe_float(s) -> float | None:
+    # A missing/empty cell is ABSENT, not a real 0.0: coercing it to zero
+    # publishes a fake price (and, for `last`, sneaks an unpriced row past
+    # classify(), which gates the publish on `last is not None`). Return None
+    # for absent input; still parse a genuine "0".
+    if s is None:
+        return None
+    t = str(s).strip().replace(",", "")
+    if not t:
+        return None
     try:
-        return float(str(s or "0").replace(",", ""))
+        return float(t)
     except (ValueError, TypeError):
         return None
 
 
 def _safe_int(s) -> int | None:
+    if s is None:
+        return None
+    t = str(s).strip().replace(",", "")
+    if not t:
+        return None
     try:
-        return int(str(s or "0").replace(",", ""))
+        return int(t)
     except (ValueError, TypeError):
         return None
 

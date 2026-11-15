@@ -1,13 +1,13 @@
 {
   "dataset": "ice.certified_stocks_arabica",
   "ok": true,
-  "fetched_at": "2026-11-14T08:30:41Z",
+  "fetched_at": "2026-11-15T10:36:57Z",
   "payload": "certified_stocks_arabica_latest.json",
-  "sha256": "a566f6c934fe4364b2ac8b531c88d806fa344f9d9c054c73252081a876c5cd76",
-  "bytes": 42498,
-  "snapshots": 3,
+  "sha256": "99923c5528b2daf8c6be52b3f7c36bfe6ed5570b4c7e0c240eef8399b6f60909",
+  "bytes": 271711,
+  "snapshots": 30,
   "window": {
-    "start": "2026-11-11",
+    "start": "2026-10-05",
     "end": "2026-11-13"
   },
   "errors": [],
@@ -17,6 +17,6 @@
     "snapshots.[].failed_text",
     "snapshots.[].passed_text"
   ],
-  "trimmed_before": "2026-11-01",
+  "trimmed_before": "2026-09-09",
   "trimmed_records": {}
 }

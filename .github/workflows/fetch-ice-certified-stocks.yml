@@ -39,8 +39,9 @@ concurrency:
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    # Matches 619. A full tier-2 sweep is 1,810 candidates at 4s/req = 121 min,
-    # so 150 leaves headroom without letting a wedged run burn three hours.
+    # Matches 619. A full tier-2 sweep is 1,810 candidates at 4s/req = 121 min.
+    # The robusta pass is now budgeted inside this (see the fetch steps), so
+    # the job timeout is a backstop, never the thing that ends a normal run.
     timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
@@ -63,23 +64,49 @@ jobs:
       # both live from the moment this job checks out. The commit step at the
       # bottom writes back whatever the run learned.
 
-      - name: Fetch and publish the current window
+      # Two passes, each committed as soon as it is published. Run 44052146050
+      # (2026-11-17) fetched arabica's three days in minutes, then spent the rest
+      # of the job on one late robusta release, hit the 150-minute timeout, and
+      # the cancel threw arabica away with it. Arabica is now pushed before the
+      # robusta sweep starts.
+      #
+      # Budget arithmetic against the 150-minute job timeout: setup ~1 +
+      # arabica ≤10 (2-3 typical, ~4 on the 30-day catch-up) + robusta step
+      # ≤135 + commits ~2 = 148. The robusta pass stops its own sweep inside
+      # --budget-min (125, minus a reserve for the per-day and monthly sources:
+      # 9 min on a 3-day window), so it finishes and publishes; the step
+      # timeout is only the backstop. On a daily run the sweep then reaches
+      # ~10:56, which held 107 of the 111 publish seconds in the hit log
+      # (2026-06-03 → 2026-11-13); the full window to 10:59:59 held 108.
+      # -u and PYTHONUNBUFFERED: a cancelled run's log is all there is to
+      # diagnose it, and buffered output arrived in two bursts on 11-17.
+      - name: Fetch and publish arabica
+        id: arabica
+        timeout-minutes: 10
+        env:
+          PYTHONUNBUFFERED: "1"
         run: |
           DAYS="${{ inputs.days || (github.event.schedule == '25 2 * * 0' && '30' || '3') }}"
           echo "window = $DAYS business days"
-          python3 fetch/publish_ice.py --days "$DAYS"
+          python3 -u fetch/publish_ice.py --days "$DAYS" --market arabica
 
-      - name: Refresh the catalogue index
-        run: python3 scripts/validate_catalog.py --update
+      - name: Commit the arabica payload
+        id: arabica_commit
+        if: ${{ !cancelled() && steps.arabica.outcome == 'success' }}
+        run: scripts/commit_ice_window.sh arabica
 
-      - name: Verify nothing outside the allow-list is about to be published
-        run: python3 scripts/check_allowlist.py
-
-      - name: Verify payloads contain only records inside their window
-        run: python3 scripts/check_payload_window.py
-
-      - name: Verify no credential-shaped strings
-        run: python3 scripts/check_no_secrets.py
+      # Runs even when arabica failed: the markets are independent, and a
+      # refused arabica xls must not cost the robusta session.
+      - name: Fetch and publish robusta
+        id: robusta
+        if: ${{ !cancelled() }}
+        timeout-minutes: 135
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: |
+          DAYS="${{ inputs.days || (github.event.schedule == '25 2 * * 0' && '30' || '3') }}"
+          echo "window = $DAYS business days"
+          python3 -u fetch/publish_ice.py --days "$DAYS" --market robusta --budget-min 125
 
       # Run telemetry, for comparing 620's request economics against 619's.
       # An artifact rather than a commit: these are per-run diagnostics with no
@@ -96,30 +123,13 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+      # The robusta commit. The script runs the four publish gates (catalogue
+      # refresh, allow-list, payload window, no secrets) before it commits, and
+      # adds the learned hits log alongside the payload.
       - name: Commit the payload
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          # The hits log is added alongside the payload: it is learned state,
-          # and a run that captures a new publish second has to write that back
-          # or tier 0 is empty for that date on the next run. `git add` on a
-          # missing path exits 128 and would kill the step under `bash -e`, so
-          # it is added only if the fetcher actually wrote it (619 hit exactly
-          # this — run 32955091040 fetched successfully and threw it away).
-          git add data/ice catalog.json CATALOG.md
-          HITS=fetch/scraper/sources/ice_certified_stocks/stock_report_hits.json
-          [ -f "$HITS" ] && git add "$HITS"
-          if git diff --cached --quiet; then
-            echo "No change in the published window."
-            exit 0
-          fi
-          git commit -m "data: ICE certified stocks window [skip ci]"
-          for attempt in 1 2 3; do
-            git pull --rebase --autostash origin "${GITHUB_REF_NAME}" && git push && exit 0
-            sleep $((RANDOM % 5 + 3))
-          done
-          echo "::error::could not push the ICE window"
-          exit 1
+        id: robusta_commit
+        if: ${{ !cancelled() && steps.robusta.outcome == 'success' }}
+        run: scripts/commit_ice_window.sh robusta
 
       # Hand off to 619's consumer. 620 is the sole ICE fetcher from
       # 2026-09-09; 619's own 1.07 is retired to manual rollback, so nothing
@@ -142,8 +152,11 @@ jobs:
       #
       # continue-on-error: the fetch is the production work and it is already
       # pushed. A dead consumer must not lose the day's payload.
+      # Runs when either market's commit step succeeded: an arabica-only
+      # publish (robusta refused or over budget) is still worth bringing home.
       - name: Hand off to 619 (sync-from-620)
         id: handoff
+        if: ${{ !cancelled() && (steps.arabica_commit.outcome == 'success' || steps.robusta_commit.outcome == 'success') }}
         continue-on-error: true
         env:
           SYNC_619_TOKEN: ${{ secrets.SYNC_619_TOKEN }}

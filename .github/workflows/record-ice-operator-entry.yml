@@ -1,0 +1,135 @@
+name: record ICE operator entry
+
+# The robusta stock CSV's filename carries the second it was published, and
+# there is no index. The fetch sweeps a deliberately narrow window, so a late
+# release is an announced miss that only a person can close: they read the six
+# digits off ICE's stock-reports page and enter them here. Or, if ICE published
+# nothing that day (an exchange holiday), they file the reason instead.
+#
+# Dispatched from 619's admin research page (ICE publish times, #operator-entry)
+# through an admin-gated API route, or by hand from the Actions tab. The rules
+# live in fetch/record_operator_entry.py, where tests can reach them.
+#
+# A recorded second is fetched by tier 0 in one GET — but only by a run whose
+# window reaches the date, because 620 publishes a window, not history. So by
+# default this dispatches the fetch with exactly that window (3..30 business
+# days). A day older than 30 business days is recorded but cannot be refetched:
+# scripts/check_payload_window.py refuses a wider publish, and the summary says
+# so rather than leaving the day to look "one GET away".
+
+on:
+  workflow_dispatch:
+    inputs:
+      market:
+        description: "Market. Only robusta has a publish second; arabica is refused with an explanation."
+        required: true
+        default: robusta
+        type: choice
+        options: [robusta, arabica]
+      date:
+        description: "Session date, YYYY-MM-DD"
+        required: true
+        type: string
+      hhmmss:
+        description: "Publish second as in the filename, e.g. 112351. Leave empty to record no release."
+        required: false
+        type: string
+      no_release_reason:
+        description: "Why ICE published nothing (only when hhmmss is empty), e.g. UK bank holiday"
+        required: false
+        type: string
+      fetch_now:
+        description: "After recording a second, dispatch the fetch with a window that reaches the date"
+        required: false
+        default: true
+        type: boolean
+
+# The fetch's own lane. Both write stock_report_hits.json and push to main; a
+# fetch that checked out before this entry and committed after it would race on
+# the same lines. Queued, never cancelled.
+concurrency:
+  group: fetch-ice-certified-stocks
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Inputs go through the environment, never `${{ }}` inside a run block:
+      # the reason is free text typed by an operator and would otherwise be shell.
+      - name: Record the entry
+        id: record
+        env:
+          IN_MARKET: ${{ inputs.market }}
+          IN_DATE: ${{ inputs.date }}
+          IN_TIME: ${{ inputs.hhmmss }}
+          IN_REASON: ${{ inputs.no_release_reason }}
+        run: |
+          python3 fetch/record_operator_entry.py \
+            --market "$IN_MARKET" --date "$IN_DATE" --hhmmss "$IN_TIME" --reason "$IN_REASON"
+
+      - name: Commit
+        env:
+          IN_DATE: ${{ inputs.date }}
+          IN_TIME: ${{ inputs.hhmmss }}
+          IN_REASON: ${{ inputs.no_release_reason }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add fetch/scraper/sources/ice_certified_stocks/stock_report_hits.json \
+                  fetch/scraper/sources/ice_certified_stocks/no_release_days.json
+          if git diff --cached --quiet; then
+            echo "Nothing changed — the entry was already on record."
+            exit 0
+          fi
+          if [ -n "$IN_TIME" ]; then
+            git commit -m "data: ICE robusta operator entry $IN_DATE @ $IN_TIME [skip ci]"
+          else
+            git commit -m "data: ICE robusta no release on $IN_DATE [skip ci]" -m "$IN_REASON"
+          fi
+          git pull --rebase origin "${GITHUB_REF_NAME:?}"
+          git push
+
+      # GITHUB_TOKEN may dispatch workflow_dispatch (the documented exception to
+      # "GITHUB_TOKEN events trigger nothing"); that is what `actions: write` is
+      # for. The fetch joins this lane and starts when this job ends.
+      - name: Dispatch the fetch that reaches the date
+        if: ${{ inputs.fetch_now && inputs.hhmmss != '' && steps.record.outputs.fetch_days != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DAYS: ${{ steps.record.outputs.fetch_days }}
+        run: |
+          gh workflow run fetch-ice-certified-stocks.yml --ref "${GITHUB_REF_NAME:?}" -f days="$DAYS"
+          echo "Dispatched fetch-ice-certified-stocks.yml with days=$DAYS."
+
+      - name: Summary
+        if: always()
+        env:
+          IN_DATE: ${{ inputs.date }}
+          IN_TIME: ${{ inputs.hhmmss }}
+          DAYS: ${{ steps.record.outputs.fetch_days }}
+          OUTCOME: ${{ steps.record.outcome }}
+        run: |
+          {
+            echo "### ICE operator entry — $IN_DATE"
+            if [ "$OUTCOME" != "success" ]; then
+              echo "Refused — see the 'Record the entry' step for the reason."
+            elif [ -z "$IN_TIME" ]; then
+              echo "Filed as no release. 619 drops it from the pending list on its next sync."
+            elif [ -n "$DAYS" ]; then
+              echo "Recorded $IN_TIME. A fetch with days=$DAYS reaches it (tier 0, one GET)."
+            else
+              echo "Recorded $IN_TIME, but the date is older than the 30-business-day window a fetch may publish: it will not be refetched."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

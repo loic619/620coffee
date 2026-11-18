@@ -80,6 +80,29 @@ diff <path-to-619>/backend/scraper/sources/ice_certified_stocks/orchestrate.py \
 
 Anything beyond those two hunks is drift and should be reconciled.
 
+### How 620 drives it without editing it
+
+`publish_ice.py` calls `orchestrate.run()` once per market (arabica first,
+then robusta) and swaps module attributes for the duration of each call —
+never the file. Since 2026-11-18 (after run 44052146050 timed out and
+published nothing):
+
+- **The other market's pulls are stubbed** (`pull_*` → no request), and each
+  pass stages into `_stage/<market>/`, so arabica is published and committed
+  before the robusta sweep starts.
+- **The robusta pass is budgeted.** `_stock_report_sweep_times` is wrapped so
+  the tier-2 sweep stops at a deadline without setting `sweep_exhausted` (a
+  budget stop is not a LATE RELEASE); per-day and monthly pulls return empty
+  past the hard deadline so `run()` still reaches its write.
+- **Hit-log days before the window are reported as held.** 620's stage is empty
+  every run, so orchestrate saw every hit-log date (111 on 11-17) as a "hole"
+  and re-fetched 20 of them plus their per-day sources, all of which the window
+  trim then dropped. `_load_existing_json` is wrapped to list those dates as
+  stored snapshots of the robusta file; history is 619's.
+
+These are 620 behaviours layered on an unchanged fetcher, so the parity
+statements above still hold for `orchestrate.py` itself.
+
 ## What was deliberately *not* ported
 
 | File | Why it stayed in 619 |

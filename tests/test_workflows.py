@@ -133,9 +133,15 @@ def test_the_fetch_commits_the_learned_hits_log(fetch_job):
     """The one piece of fetch state that must survive the runner. Without this
     620 relearns tier 1 from the bootstrap guesses on every run and tier 0 is
     permanently empty for anything this repo captured itself."""
-    text = (Path(__file__).resolve().parent.parent / FETCH).read_text()
-    assert "stock_report_hits.json" in text
-    assert "git add \"$HITS\"" in text
+    root = Path(__file__).resolve().parent.parent
+    # The commit lives in scripts/commit_ice_window.sh since the fetch was split
+    # into per-market passes; every commit step must go through it.
+    script = (root / "scripts" / "commit_ice_window.sh").read_text()
+    assert "stock_report_hits.json" in script
+    assert "git add \"$HITS\"" in script
+    commits = [s for s in fetch_job[1]["steps"] if (s.get("name") or "").startswith("Commit")]
+    assert len(commits) == 2
+    assert all("scripts/commit_ice_window.sh" in s["run"] for s in commits)
 
 
 def test_the_hits_log_is_not_git_ignored():

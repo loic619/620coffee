@@ -557,9 +557,23 @@ def _save_vn_prices_to_db(viet: dict, fetched_at: str) -> None:
 #     window's coverage is cron-job.org dispatches that carry no schedule, so
 #     the clock is the faithful test. Outside it acaphe strips VN prices by
 #     design; a warning on every afternoon tick would bury the real ones.
+#
+# Once per UTC weekday, not once per tick. A stale snapshot stays stale until
+# acaphe next publishes, so the error held true on every tick after the first —
+# on 2026-11-25 that was a red run and a failure email every 15 minutes from
+# 10:45 UTC on, for one fact already reported. The first stale tick of a UTC
+# weekday still fails; it records the date under VN_ALERT_KEY in Upstash (where
+# `vietnam_last` itself lives), and later stale ticks that same UTC day print
+# ::warning:: and exit 0. The next weekday has a new date, so a snapshot still
+# stale fails again then. Weekend ticks never fail: no weekday hours accrue on
+# Sat/Sun, so the condition cannot be new there, and Friday already reported it.
+# The marker fails toward alerting: if Upstash cannot be read or written, the
+# marker is missing and the tick fails as before.
 VN_MAX_AGE_H         = 26           # same bound as 619's 2.04 (persist_vn_daily.py)
 VN_WINDOW_UTC_HOURS  = range(0, 8)  # mirrors the '7,27,47 0-7 * * 1-5' cron
 VN_STALE             = False        # set by fetch_and_save; --once exits 1 on it
+VN_ALERT_KEY         = "vietnam_stale_alerted"  # {"date": "YYYY-MM-DD", "saved_at": ...}
+VN_ALERT_TTL_S       = 7 * 24 * 3600            # outlives any weekend; never needed longer
 
 
 def _weekday_hours_between(start: datetime, end: datetime) -> float:
@@ -582,11 +596,14 @@ def _in_vn_window(now: datetime) -> bool:
     return now.weekday() < 5 and now.hour in VN_WINDOW_UTC_HOURS
 
 
-def _vn_absent_alert(last_vn: dict | None, now: datetime) -> str:
+def _vn_absent_alert(last_vn: dict | None, now: datetime, alerted_on: str | None = None) -> str:
     """Classify a tick with no VN bids: 'error', 'warning' or 'quiet'.
 
     Prints the matching GitHub annotation; the caller turns 'error' into a
-    non-zero exit.
+    non-zero exit and records today's date as `alerted_on` for later ticks.
+    `alerted_on` is the UTC date (YYYY-MM-DD) on which a stale snapshot last
+    failed a tick; a stale snapshot already alerted today, or on a weekend,
+    is downgraded to 'warning'.
     """
     saved_raw = (last_vn or {}).get("saved_at")
     saved = None
@@ -601,6 +618,14 @@ def _vn_absent_alert(last_vn: dict | None, now: datetime) -> str:
     if saved is not None:
         age_h = _weekday_hours_between(saved, now)
         if age_h > VN_MAX_AGE_H:
+            today = now.date().isoformat()
+            if alerted_on == today or now.weekday() >= 5:
+                why = (f"already failed a tick on {today}" if alerted_on == today
+                       else "weekend tick; the next weekday fails again if still stale")
+                print(f"::warning::vietnam_last is {age_h:.1f} weekday hours old "
+                      f"(saved_at {saved_raw}, limit {VN_MAX_AGE_H} h) and acaphe "
+                      f"served no VN bids on this tick — not failing: {why}")
+                return "warning"
             print(f"::error::vietnam_last is {age_h:.1f} weekday hours old "
                   f"(saved_at {saved_raw}, limit {VN_MAX_AGE_H} h) and acaphe "
                   "served no VN bids on this tick — a whole VN window has passed "
@@ -653,8 +678,16 @@ def fetch_and_save(cookies: dict) -> bool:
                 data["vietnam"] = last_vn
                 print("[acaphe] VN data absent — injected last-known snapshot")
             # PORTED TO 620 — see VN_MAX_AGE_H. The tick still publishes
-            # normally; only the exit code of --once changes.
-            VN_STALE = _vn_absent_alert(last_vn, datetime.now(UTC)) == "error"
+            # normally; only the exit code of --once changes, and only on the
+            # first stale tick of a UTC weekday (the VN_ALERT_KEY marker).
+            now = datetime.now(UTC)
+            marker = _get_redis(VN_ALERT_KEY)
+            alerted_on = marker.get("date") if isinstance(marker, dict) else None
+            VN_STALE = _vn_absent_alert(last_vn, now, alerted_on) == "error"
+            if VN_STALE:
+                _push_redis({"date": now.date().isoformat(),
+                             "saved_at": (last_vn or {}).get("saved_at")},
+                            key=VN_ALERT_KEY, ttl_s=VN_ALERT_TTL_S)
 
         # Validate before publishing: a degraded payload must not overwrite the
         # last good one (see classify()). The status travels with the data so

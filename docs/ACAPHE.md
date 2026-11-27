@@ -17,15 +17,39 @@ so the live path does not change.
 workflow externally as well because GitHub's scheduler has throttled this
 workflow twice.
 
-`acaphe_poller.py`'s code differs from 619's copy in **two** places, both
+`acaphe_poller.py`'s code differs from 619's copy in **three** places, all
 marked `PORTED TO 620`: the path anchors (`ACAPHE_STAGE`, `OUTPUT`,
-`VIETNAM_LAST`), and the no-VN alert (register #262): a tick with no VN bids
+`VIETNAM_LAST`), the no-VN alert (register #262): a tick with no VN bids
 fails with `::error::` when `vietnam_last` is older than 26 weekday hours, and
-warns inside the 00:00-07:59 UTC weekday VN window otherwise. Prose (docstring,
+warns inside the 00:00-07:59 UTC weekday VN window otherwise; and the session
+jar's TTL (`COOKIE_TTL_S`, below), a fix 619's copy should take too. Prose (docstring,
 comments) is not held identical. Any other code difference is drift — Redis is
 the live path for both, so a difference in what arrives there would have to
 mean the poll differed, not the code. 619's `check_620_fetch_parity.py` reports
 it. `validate_export.py` is byte-identical.
+
+## The session cache, and why it rarely helps
+
+Only the login needs a browser; the quotes come over plain HTTP with the
+session cookie (`SSID`, the only cookie acaphe sets). The cookie jar is cached
+in Upstash under `acaphe_cookies`, but **acaphe expires the session itself
+within about 3-4 minutes of login**. Measured over 620's 400 poll runs of
+2026-11-18 to 2026-11-27: a cached jar was accepted at ages up to 2.9 min
+(6 runs) and refused with `No Permission` from 4.2 min on (391 runs). It is not
+bound to the runner's IP: a jar written from a `westus3` runner was accepted
+from an `eastus` one 2.2 min later (runs 46046252400 and 46046541266).
+
+Ticks are 15-20 minutes apart, so no jar can survive from one ordinary tick to
+the next. Until 2026-11-27 the jar's TTL was 12 h, and nearly every tick read a
+dead jar, sent a request certain to be refused, printed `ERROR ... No
+Permission`, and logged in anyway. `COOKIE_TTL_S` is now 150 s: the jar leaves
+Redis before acaphe kills it, a later tick logs in directly, and only a tick
+that lands within 150 s of a login (a cron-job.org dispatch next to a GitHub
+schedule) skips the browser. A refusal inside that window is still replaced
+once per tick by the relogin in `main()`. The login costs about 4 s of the poll
+step (median 6 s on a relogin tick against 2 s on a reused one), so the cache's
+value is small either way; its TTL also bounds how long a live credential sits
+in Upstash. Pinned by `tests/test_acaphe_cookie_cache.py`.
 
 ## What is deliberately NOT here
 

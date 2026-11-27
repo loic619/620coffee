@@ -3,7 +3,7 @@ acaphe_poller.py — poll iquote.php, write cleaned JSON to a scratch directory
 and push it to Redis.
 
 PORTED TO 620 — this file is kept in step with 619's copy
-(backend/scraper/acaphe_poller.py), and its code differs from it in two places
+(backend/scraper/acaphe_poller.py), and its code differs from it in three places
 only, each marked `PORTED TO 620` below:
 
   1. path anchors — ACAPHE_STAGE, OUTPUT and VIETNAM_LAST point at a per-run
@@ -11,6 +11,9 @@ only, each marked `PORTED TO 620` below:
      directory. That also costs the `timedelta` in the datetime import line.
   2. the no-VN alert (VN_MAX_AGE_H and its helpers, register #262), which
      fails a --once tick when vietnam_last goes stale.
+  3. COOKIE_TTL_S = 150 (was 12 h), the measured acaphe session lifetime.
+     A fix, not a 620 particularity: 619's copy should take the same value,
+     and then this item goes away.
 
 Prose (this docstring, comments) is not held identical. Redis is the live path
 for both repositories, so any other code difference is drift: port it, or name
@@ -22,12 +25,13 @@ Usage (from repo root):
 
 Two things are worth knowing before changing this file.
 
-Playwright is the exception path, not the normal one. Only the LOGIN needs a
-browser; the quotes themselves come over plain HTTP with the resulting
-cookies. Those cookies are cached in Redis (see get_cookies), so a --once tick
-in a fresh CI container reuses the session instead of launching Chromium every
-time. A browser starts only on a cache miss, or when cached cookies are
-rejected.
+Only the LOGIN needs a browser; the quotes themselves come over plain HTTP
+with the resulting cookies. Those cookies are cached in Redis (see
+get_cookies), but only for COOKIE_TTL_S = 150 s, because acaphe kills the
+session itself within about 3-4 minutes. Ticks are 15-20 minutes apart, so in
+practice nearly every --once tick logs in: the cache only spares the browser
+when two ticks land within 150 s of each other. A browser starts on a cache
+miss, or once when cached cookies are rejected.
 
 A successful fetch is not the same as usable data. acaphe answers HTTP 200
 with an empty or unpriced payload often enough that publishing whatever parsed
@@ -65,11 +69,22 @@ UPSTASH_URL   = os.environ.get("UPSTASH_REDIS_REST_URL", "").rstrip("/")
 UPSTASH_TOKEN = os.environ.get("UPSTASH_REDIS_REST_TOKEN", "")
 REDIS_KEY     = "live_quotes"
 # Session jar, cached so Playwright is not launched on every tick. Stored in
-# Upstash (token-gated, not public like this repo) with a TTL so a credential
-# cannot linger indefinitely; acaphe's own session may expire sooner, which
-# the fetch-then-relogin path below handles.
+# Upstash (token-gated, not public like this repo).
+#
+# PORTED TO 620 — the TTL is acaphe's session lifetime, not a convenience.
+# acaphe expires its SSID session server-side minutes after login. Across 620's
+# 400 poll runs of 2026-11-18..27, a cached jar was accepted at ages up to
+# 2.9 min (6 runs) and refused with "No Permission" from 4.2 min on (391 runs).
+# It is not bound to the runner: a jar written from westus3 was accepted from
+# eastus 2.2 min later (runs 46046252400 -> 46046541266). Ticks are 15-20 min
+# apart, so the old 12 h TTL made almost every tick read a dead jar, send a
+# doomed request, print an ERROR, and log in anyway. 150 s takes the jar out of
+# Redis before acaphe kills it: a later tick finds no jar and logs in directly,
+# and the rare tick inside the window (a cron-job.org dispatch and a GitHub
+# schedule a couple of minutes apart) still skips the browser. A refusal inside
+# the window is still replaced once, by the relogin in main().
 COOKIE_KEY    = "acaphe_cookies"
-COOKIE_TTL_S  = 12 * 3600
+COOKIE_TTL_S  = 150
 DATABASE_URL  = os.environ.get("DATABASE_URL", "")
 
 # VN-only mode, set by the 01:00-04:00 UTC cron block in poll-acaphe-quotes.yml.
@@ -477,12 +492,13 @@ async def get_cookies(force_login: bool = False) -> tuple[dict, bool]:
     Under GitHub Actions every tick is a fresh container, so "log in once then
     poll" — the shape the persistent worker uses — has nothing to hold the
     session in. Caching the jar in Redis (already provisioned for the quotes
-    themselves) restores that property across runs: Playwright then runs only
-    on a cache miss or after the cached cookies stop working, instead of on
-    every single tick.
+    themselves) carries it across runs, but only as far as acaphe lets it:
+    the session dies server-side within about 3-4 minutes, so the jar's TTL
+    (COOKIE_TTL_S) removes it from Redis before that. A tick inside the TTL
+    skips the browser; a later one finds no jar and logs in without first
+    sending a request that is certain to be refused.
 
-    The jar carries a TTL so a stale credential expires on its own, and the
-    caller re-logs in when a fetch fails on cached cookies.
+    The caller re-logs in once when a fetch fails on cached cookies.
 
     Returns (cookies, from_cache) — the flag tells the caller whether a
     failure is worth retrying with a fresh login.

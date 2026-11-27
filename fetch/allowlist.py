@@ -70,6 +70,9 @@ ICE_ARABICA = {
 #                          620 publishes only the freshly fetched window.
 #   monthly.implied_outflow    — cohort_outflow.py output. Derived.
 #   monthly.current_by_origin  — cohort-DNA derivation. Derived.
+#   monthly.current_by_origin_method — how current_by_origin was allocated
+#                              (cohort DNA / port fallback / unallocated);
+#                              619 f73b68f5. Derived.
 ICE_ROBUSTA = {
     "generated_at": True,
     "as_of": True,

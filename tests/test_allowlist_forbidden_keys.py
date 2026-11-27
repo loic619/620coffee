@@ -77,3 +77,12 @@ def test_ageing_key_is_caught(staged, capsys, key):
     _inject(path, key)
     assert checker.main() == 1
     assert f"'snapshots.[].{key}' is private" in capsys.readouterr().err
+
+
+def test_cohort_allocation_audit_is_caught(staged, capsys):
+    # 619 f73b68f5 added monthly.current_by_origin_method to the robusta
+    # derivation the fetch can build in memory; it is never published either.
+    checker, path = staged
+    _inject(path, "current_by_origin_method")
+    assert checker.main() == 1
+    assert "'snapshots.[].current_by_origin_method' is private" in capsys.readouterr().err

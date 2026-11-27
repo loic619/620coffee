@@ -42,11 +42,13 @@ def test_cohort_derivations_are_dropped_but_raw_monthly_reports_survive():
         "age_allowance": [{"month_end": "2026-08-31"}],  # and this
         "implied_outflow": [{"month_end": "2026-08-31"}],  # cohort_outflow.py
         "current_by_origin": {"BR": 1},                    # cohort DNA
+        "current_by_origin_method": {"total_lots": 1},     # its allocation audit
     }}
     kept, dropped = prune(doc, ICE_ROBUSTA)
     assert sorted(kept["monthly"]) == ["age_allowance", "iss_recv_monthly"]
     assert "monthly.implied_outflow" in dropped
     assert "monthly.current_by_origin" in dropped
+    assert "monthly.current_by_origin_method" in dropped
 
 
 def test_accumulated_port_history_is_dropped():

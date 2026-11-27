@@ -258,12 +258,38 @@ def build_current_by_origin(
         • the raw gradings lots cover less than the threshold of the
           bucket size (gradings event data too thin to trust).
     """
+    out: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))
+    for port, origin, lots, _method in _apportion_current(
+        latest_report, cohort_dna, port_alltime_dna,
+        gradings_per_port_month_origin, dna_coverage_threshold,
+    ):
+        out[port][origin] += lots
+    return {p: {o: round(v, 2) for o, v in od.items() if v > 0}
+            for p, od in out.items() if od}
+
+
+# Allocation methods, in the order the fallback hierarchy tries them.
+METHOD_COHORT = "cohort_dna"        # the bucket's own cohort gradings split
+METHOD_PORT = "port_fallback"       # the port's all-time origin mix (estimate)
+METHOD_NONE = "unallocated"         # no DNA at all → origin "?"
+METHODS = (METHOD_COHORT, METHOD_PORT, METHOD_NONE)
+
+
+def _apportion_current(
+    latest_report: dict,
+    cohort_dna: dict,
+    port_alltime_dna: dict | None,
+    gradings_per_port_month_origin: dict | None,
+    dna_coverage_threshold: float,
+):
+    """Yield (port, origin, lots, method) for every allocated slice of the
+    latest ageing report. Shared by build_current_by_origin and
+    build_current_by_origin_method so the two can never disagree."""
     if not latest_report:
-        return {}
+        return
     port_alltime_dna = port_alltime_dna or {}
     gradings_per_port_month_origin = gradings_per_port_month_origin or {}
     me_iso = month_iso_of(latest_report["month_end"])
-    out: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))
     for bucket in latest_report.get("valid", {}).get("buckets", []) or []:
         k = bucket.get("months_since_graded")
         if k is None or k < 0:
@@ -273,20 +299,62 @@ def build_current_by_origin(
             if mt <= 0:
                 continue
             lots = mt / 10.0
+            method = METHOD_COHORT
             dna = cohort_dna.get(port, {}).get(cohort, {})
             if dna:
                 graded_lots = sum(gradings_per_port_month_origin.get(port, {}).get(cohort, {}).values())
                 if graded_lots > 0 and lots > 0 and graded_lots < dna_coverage_threshold * lots:
                     dna = {}
             if not dna:
+                method = METHOD_PORT
                 dna = port_alltime_dna.get(port, {})
             if not dna:
-                out[port]["?"] += lots
+                yield port, "?", lots, METHOD_NONE
                 continue
             for origin, share in dna.items():
-                out[port][origin] += lots * share
-    return {p: {o: round(v, 2) for o, v in od.items() if v > 0}
-            for p, od in out.items() if od}
+                yield port, origin, lots * share, method
+
+
+def build_current_by_origin_method(
+    latest_report: dict,
+    cohort_dna: dict,
+    port_alltime_dna: dict | None,
+    gradings_per_port_month_origin: dict | None = None,
+    *,
+    dna_coverage_threshold: float = 0.5,
+) -> dict:
+    """How `current_by_origin` was allocated: lots per method, overall and
+    per origin, for the same latest ageing report.
+
+    `port_fallback` lots carry the port's all-time origin mix, not the
+    cohort's own — an estimate the UI must flag. `unallocated` lots sit
+    under origin "?". Returns {} when there is no report.
+
+    Shape: {"month_end": "YYYY-MM-DD",
+            "total_lots": float,
+            "by_method": {method: lots},
+            "by_origin": {origin: {method: lots}}}
+    """
+    if not latest_report:
+        return {}
+    by_method: dict[str, float] = {m: 0.0 for m in METHODS}
+    by_origin: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))
+    for _port, origin, lots, method in _apportion_current(
+        latest_report, cohort_dna, port_alltime_dna,
+        gradings_per_port_month_origin, dna_coverage_threshold,
+    ):
+        by_method[method] += lots
+        by_origin[origin][method] += lots
+    total = sum(by_method.values())
+    if total <= 0:
+        return {}
+    return {
+        "month_end": latest_report["month_end"],
+        "total_lots": round(total, 2),
+        "by_method": {m: round(v, 2) for m, v in by_method.items()},
+        "by_origin": {o: {m: round(v, 2) for m, v in om.items() if v > 0}
+                      for o, om in by_origin.items()},
+    }
 
 
 # ── Port-level all-time DNA (fallback for cohorts predating gradings data) ──

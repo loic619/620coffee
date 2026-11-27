@@ -49,6 +49,7 @@ from .arabica_ageing_history import (
 from .cohort_outflow import (
     build_cohort_dna,
     build_current_by_origin,
+    build_current_by_origin_method,
     build_implied_outflow,
     build_port_alltime_dna,
 )
@@ -1505,6 +1506,11 @@ def recompute_robusta_cohort_outflow(data: dict) -> dict:
     cbo = build_current_by_origin(latest, cohort_dna, port_alltime_dna, gpmo)
     if cbo:
         monthly["current_by_origin"] = cbo
+    # Allocation-method audit for the same report: how many lots carry their
+    # cohort's own origin split vs the port's all-time mix (an estimate).
+    cbom = build_current_by_origin_method(latest, cohort_dna, port_alltime_dna, gpmo)
+    if cbom:
+        monthly["current_by_origin_method"] = cbom
     data["monthly"] = monthly
     print(f"  → cohort outflow recomputed: +{added} month(s), "
           f"latest implied_outflow = {monthly['implied_outflow'][-1]['month_end']}")
@@ -1729,6 +1735,8 @@ def _merge_robusta(new: dict, old: dict) -> dict:
         new["monthly"]["implied_outflow"] = old["monthly"]["implied_outflow"]
     if not new["monthly"].get("current_by_origin") and (old.get("monthly") or {}).get("current_by_origin"):
         new["monthly"]["current_by_origin"] = old["monthly"]["current_by_origin"]
+    if not new["monthly"].get("current_by_origin_method") and (old.get("monthly") or {}).get("current_by_origin_method"):
+        new["monthly"]["current_by_origin_method"] = old["monthly"]["current_by_origin_method"]
 
     # latest_detail: only overwrite if the new run actually captured a
     # stock_report — otherwise keep the older one so the panel keeps showing
